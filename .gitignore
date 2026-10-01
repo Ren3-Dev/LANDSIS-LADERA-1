@@ -1,0 +1,65 @@
+# Node.js
+node_modules/
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.pnpm-store/
+
+# TypeScript y resultados de compilación
+*.tsbuildinfo
+dist/
+build/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Arduino / ESP32: archivos generados
+.arduino/
+.arduinoIDE/
+.pio/
+*.elf
+*.bin
+*.hex
+*.eep
+*.o
+*.a
+*.map
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Variables de entorno; conservar ejemplos sin secretos
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Cobertura
+coverage/
+.nyc_output/
+
+# Archivos temporales
+tmp/
+temp/
+.cache/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

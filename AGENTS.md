@@ -1,0 +1,23 @@
+# Reglas del proyecto LANDSIS LADERA-1
+
+- Este es un proyecto universitario desarrollado principalmente por una sola persona.
+- Priorizar simplicidad, mantenibilidad y claridad.
+- No agregar frameworks, tecnologías o dependencias sin necesidad.
+- No inventar requisitos.
+- No inventar pines, calibraciones, umbrales ni parámetros de sensores.
+- Mantener separados firmware, backend y frontend.
+- Backend: Node.js + TypeScript.
+- Base de datos prevista: PostgreSQL.
+- Comunicación del nodo prevista: HTTP/JSON mediante Wi-Fi.
+- Validar siempre los datos provenientes del nodo IoT.
+- No almacenar secretos, contraseñas ni credenciales en el repositorio.
+- Usar variables de entorno para información sensible.
+- Mantener el código comprensible y justificable académicamente.
+- Evitar sobreingeniería.
+- Ejecutar las pruebas disponibles después de cambios.
+- No modificar componentes fuera del alcance de cada tarea.
+- Explicar antes de realizar cambios arquitectónicos importantes.
+- No modificar manualmente `.git/`.
+- No asumir que el MPU6050 está integrado o funcionando hasta que sea confirmado.
+- No asumir valores definitivos de calibración del sensor de humedad.
+- No asumir valores definitivos para los niveles de riesgo.
