@@ -1,15 +1,21 @@
 import express from 'express';
-import readingsRouter from './routes/readings.js';
+import { createReadingsRouter } from './routes/readings.js';
+import { insertReading } from './data/readings.js';
+import type { SaveReading } from './data/readings.js';
 
-const app = express();
+export function createApp(saveReading: SaveReading = insertReading) {
+  const app = express();
 
-app.use('/api/v1/readings', readingsRouter);
+  app.use('/api/v1/readings', createReadingsRouter(saveReading));
 
-app.get('/health', (_req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    service: 'LANDSIS LADERA-1 API',
+  app.get('/health', (_req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      service: 'LANDSIS LADERA-1 API',
+    });
   });
-});
 
-export default app;
+  return app;
+}
+
+export default createApp();

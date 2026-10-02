@@ -1,27 +1,30 @@
 import { Router, json } from 'express';
 import type { ErrorRequestHandler } from 'express';
-import { acceptReading } from '../controllers/readings.js';
+import { createAcceptReading } from '../controllers/readings.js';
+import type { SaveReading } from '../data/readings.js';
 
-const readingsRouter = Router();
+export function createReadingsRouter(saveReading: SaveReading) {
+  const readingsRouter = Router();
 
-readingsRouter.post('/', json(), acceptReading);
+  readingsRouter.post('/', json(), createAcceptReading(saveReading));
 
-const handleInvalidJson: ErrorRequestHandler = (error: unknown, _req, res, next) => {
-  if (
-    error instanceof SyntaxError &&
-    'type' in error &&
-    error.type === 'entity.parse.failed'
-  ) {
-    res.status(400).json({
-      status: 'invalid',
-      message: 'Medición inválida: el cuerpo debe contener JSON válido.',
-    });
-    return;
-  }
+  const handleInvalidJson: ErrorRequestHandler = (error: unknown, _req, res, next) => {
+    if (
+      error instanceof SyntaxError &&
+      'type' in error &&
+      error.type === 'entity.parse.failed'
+    ) {
+      res.status(400).json({
+        status: 'invalid',
+        message: 'Medición inválida: el cuerpo debe contener JSON válido.',
+      });
+      return;
+    }
 
-  next(error);
-};
+    next(error);
+  };
 
-readingsRouter.use(handleInvalidJson);
+  readingsRouter.use(handleInvalidJson);
 
-export default readingsRouter;
+  return readingsRouter;
+}
