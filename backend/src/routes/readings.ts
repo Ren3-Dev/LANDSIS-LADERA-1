@@ -1,12 +1,14 @@
 import { Router, json } from 'express';
 import type { ErrorRequestHandler } from 'express';
-import { createAcceptReading } from '../controllers/readings.js';
-import type { SaveReading } from '../data/readings.js';
+import { createAcceptReading, createListReadings, createLatestReading } from '../controllers/readings.js';
+import type { SaveReading, ListReadings } from '../data/readings.js';
 
-export function createReadingsRouter(saveReading: SaveReading) {
+export function createReadingsRouter(saveReading: SaveReading, loadReadings: ListReadings) {
   const readingsRouter = Router();
 
   readingsRouter.post('/', json(), createAcceptReading(saveReading));
+  readingsRouter.get('/', createListReadings(loadReadings));
+  readingsRouter.get('/latest', createLatestReading(loadReadings));
 
   const handleInvalidJson: ErrorRequestHandler = (error: unknown, _req, res, next) => {
     if (
