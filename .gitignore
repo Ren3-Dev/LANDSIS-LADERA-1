@@ -42,6 +42,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # Variables de entorno; conservar ejemplos sin secretos
+firmware/landsis_ladera1/secrets.h
 .env
 .env.*
 !.env.example

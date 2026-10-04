@@ -31,3 +31,7 @@ La API utiliza camelCase y PostgreSQL snake_case (`accel_x`, `gyro_y`, etc.). PO
 En instalaciones nuevas aplicar 001 y luego `database/002_add_mpu6050_fields_to_sensor_readings.sql`; en instalaciones existentes verificar el esquema y aplicar solamente 002, una vez, antes de iniciar esta versión del backend. Agrega siete columnas DOUBLE PRECISION anulables sin relleno y un CHECK: todos NULL o todos presentes. No modifica los campos originales.
 
 Ejecutar `npm test` desde backend (incluye build). Las pruebas utilizan dobles de persistencia; la verificación de la base real es independiente.
+
+## Prueba física por WiFi (incremento 6)
+
+El sketch HTTP se encuentra en `firmware/landsis_ladera1/landsis_ladera1.ino`, derivado del sketch original conservado en `firmware/Nodo_Ladera_1_v1.ino`. La [guía de prueba](firmware/landsis_ladera1/README.md) explica credenciales locales ignoradas por Git, URL del PC, carga, diagnóstico y verificación en PostgreSQL. La comunicación usa WiFi/HTTPClient nativos en una tarea separada para que los timeouts no bloqueen el loop de sensores. El éxito físico requiere ejecutar la prueba con el ESP32 y la red real.
