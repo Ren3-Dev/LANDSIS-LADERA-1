@@ -11,7 +11,8 @@
 // Parámetros de prueba de comunicación; no son calibraciones de sensores.
 const unsigned long INTERVALO_ENVIO_MS = 5000;
 const unsigned long INTERVALO_RECONEXION_MS = 10000;
-const uint16_t HTTP_TIMEOUT_MS = 2000;
+const int32_t HTTP_CONNECT_TIMEOUT_MS = 2000;
+const uint16_t HTTP_READ_TIMEOUT_MS = 2000;
 
 struct LecturaEnvio {
   int humedadRaw;
@@ -36,12 +37,15 @@ void tareaComunicacion(void*) {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("WiFi: conexión iniciada; sensores continúan.");
   bool estabaConectado = false;
+  bool huboConexion = false;
   unsigned long ultimoIntento = millis();
 
   for (;;) {
     bool conectado = WiFi.status() == WL_CONNECTED;
     if (conectado && !estabaConectado) {
-      Serial.println("WiFi: conectado/reconectado.");
+      Serial.println(huboConexion ? "WiFi: recuperado." : "WiFi: conectado.");
+      huboConexion = true;
+      ultimoIntento = millis();
     } else if (!conectado && estabaConectado) {
       Serial.println("WiFi: conexión perdida; sensores continúan.");
     }
@@ -49,7 +53,11 @@ void tareaComunicacion(void*) {
     if (!conectado && millis() - ultimoIntento >= INTERVALO_RECONEXION_MS) {
       ultimoIntento = millis();
       Serial.println("WiFi: intentando reconexión.");
-      WiFi.reconnect();
+      if (!WiFi.reconnect()) {
+        // Puede haber un intento automático en curso; no forzar begin/disconnect.
+        Serial.printf("WiFi: core no aceptó reconexión; estado %d. Se espera otro ciclo.\n",
+                      static_cast<int>(WiFi.status()));
+      }
     }
 
     LecturaEnvio lectura;
@@ -74,19 +82,30 @@ void tareaComunicacion(void*) {
       } else {
         WiFiClient cliente;
         HTTPClient http;
-        http.setConnectTimeout(HTTP_TIMEOUT_MS);
-        http.setTimeout(HTTP_TIMEOUT_MS);
+        http.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+        http.setTimeout(HTTP_READ_TIMEOUT_MS);
+        http.setReuse(false);
         if (!http.begin(cliente, API_URL)) {
           Serial.println("HTTP: no se pudo iniciar; revisar URL local.");
         } else {
           http.addHeader("Content-Type", "application/json");
           Serial.println("HTTP: enviando medición multisensor.");
+          unsigned long inicioSolicitud = millis();
           int codigo = http.POST(reinterpret_cast<uint8_t*>(json), longitud);
-          Serial.printf("HTTP: código %d\n", codigo);
           resultado.aceptado = codigo == 201;
-          Serial.println(resultado.aceptado
-            ? "HTTP 201: medición aceptada."
-            : "HTTP: fallo; se intentará otra lectura en un ciclo posterior.");
+          if (codigo < 0) {
+            String detalle = HTTPClient::errorToString(codigo);
+            Serial.printf("HTTP transporte: %d (%s); duración %lu ms; WiFi estado %d.\n",
+                          codigo, detalle.c_str(), millis() - inicioSolicitud,
+                          static_cast<int>(WiFi.status()));
+          } else if (resultado.aceptado) {
+            Serial.printf("HTTP: 201 accepted; duración %lu ms.\n", millis() - inicioSolicitud);
+          } else {
+            Serial.printf("HTTP servidor: %d; duración %lu ms.\n", codigo, millis() - inicioSolicitud);
+          }
+          if (!resultado.aceptado) {
+            Serial.println("HTTP: sin confirmación; vibración conservada, próxima lectura en otro ciclo.");
+          }
         }
         http.end();
       }
