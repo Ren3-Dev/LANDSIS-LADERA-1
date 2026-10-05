@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { isReading } from '../readings/reading.js';
 import type { SaveReading, ListReadings } from '../data/readings.js';
+import { parseReadingQuery } from '../readings/query.js';
 
 export function createAcceptReading(saveReading: SaveReading) {
   return async (req: Request, res: Response): Promise<void> => {
@@ -28,21 +29,14 @@ export function createAcceptReading(saveReading: SaveReading) {
 
 export function createListReadings(loadReadings: ListReadings) {
   return async (req: Request, res: Response): Promise<void> => {
-    const value = req.query.limit;
-    let limit = 50;
-    if (value !== undefined) {
-      if (typeof value !== 'string' || !/^\d+$/.test(value)) {
-        res.status(400).json({ status: 'error', message: 'limit debe ser un entero entre 1 y 100.' });
-        return;
-      }
-      limit = Number(value);
-      if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-        res.status(400).json({ status: 'error', message: 'limit debe ser un entero entre 1 y 100.' });
-        return;
-      }
+    let parsed;
+    try { parsed = parseReadingQuery(req.query); }
+    catch (error) {
+      res.status(400).json({ status: 'error', message: (error as Error).message });
+      return;
     }
     try {
-      res.status(200).json({ readings: await loadReadings(limit) });
+      res.status(200).json({ readings: await loadReadings(parsed.limit, parsed.filters) });
     } catch {
       res.status(500).json({ status: 'error', message: 'No se pudieron consultar las mediciones.' });
     }
@@ -50,9 +44,15 @@ export function createListReadings(loadReadings: ListReadings) {
 }
 
 export function createLatestReading(loadReadings: ListReadings) {
-  return async (_req: Request, res: Response): Promise<void> => {
+  return async (req: Request, res: Response): Promise<void> => {
+    let parsed;
+    try { parsed = parseReadingQuery(req.query, true); }
+    catch (error) {
+      res.status(400).json({ status: 'error', message: (error as Error).message });
+      return;
+    }
     try {
-      const [reading] = await loadReadings(1);
+      const [reading] = await loadReadings(1, parsed.filters);
       if (!reading) {
         res.status(404).json({ status: 'error', message: 'No hay mediciones disponibles.' });
         return;

@@ -4,6 +4,15 @@ const { test } = require('node:test');
 const nullMpu = { accelX: null, accelY: null, accelZ: null, gyroX: null, gyroY: null, gyroZ: null, temperature: null };
 const nullMpuRow = { accel_x: null, accel_y: null, accel_z: null, gyro_x: null, gyro_y: null, gyro_z: null, temperature: null };
 const { createApp } = require('../dist/app.js');
+// Adaptar los dobles existentes a la conexión transaccional, manteniendo sus casos.
+function transactionalPool(query) {
+  return { query, connect: async () => ({
+    release() {}, query: async (sql, parameters) => {
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(sql) || sql.startsWith('INSERT INTO nodes')) return { rows: [] };
+      return query(sql, parameters);
+    },
+  }) };
+}
 
 test('SELECT parametrizado: orden descendente, límite y transformación compartida', async (t) => {
   const postgres = require('../dist/data/postgres.js');
@@ -113,8 +122,7 @@ test('Acceso a datos: INSERT parametrizado y valores generados por PostgreSQL', 
   const reading = {
     nodeId: "LADERA-1'", soilMoistureRaw: 1837, vibrationDetected: false,
   };
-  postgres.getPool = () => ({
-    query: async (sql, parameters) => {
+  postgres.getPool = () => transactionalPool(async (sql, parameters) => {
       assert.match(sql, /VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10\)/);
       assert.match(sql, /RETURNING/);
       assert.equal(sql.includes(reading.nodeId), false);
@@ -123,14 +131,13 @@ test('Acceso a datos: INSERT parametrizado y valores generados por PostgreSQL', 
         ...nullMpuRow, id: 7, node_id: reading.nodeId, soil_moisture_raw: 1837,
         vibration_detected: false, received_at: new Date('2026-10-01T00:00:00Z'),
       }] };
-    },
-  });
+    });
   assert.deepEqual(await insertReading(reading), {
     ...reading, ...nullMpu, id: 7, receivedAt: '2026-10-01T00:00:00.000Z',
   });
-  postgres.getPool = () => ({ query: async () => ({ rows: [] }) });
+  postgres.getPool = () => transactionalPool(async () => ({ rows: [] }));
   await assert.rejects(insertReading(reading));
-  postgres.getPool = () => ({ query: async () => { throw new Error('Fallo simulado'); } });
+  postgres.getPool = () => transactionalPool(async () => { throw new Error('Fallo simulado'); });
   await assert.rejects(insertReading(reading));
 });
 
@@ -251,7 +258,7 @@ test('Incremento 5: multisensor, validación y consultas compatibles', async (t)
   const sqlFields = ['accel_x', 'accel_y', 'accel_z', 'gyro_x', 'gyro_y', 'gyro_z', 'temperature'];
   let row = { id: 9, node_id: legacy.nodeId, soil_moisture_raw: 4095, vibration_detected: false, received_at: new Date('2026-10-04T00:00:00Z'), ...nullMpuRow };
   let calls = 0;
-  postgres.getPool = () => ({ query: async (sql, parameters) => {
+  postgres.getPool = () => transactionalPool(async (sql, parameters) => {
     calls++;
     for (const field of sqlFields) assert.ok(sql.includes(field));
     if (sql.startsWith('INSERT')) {
@@ -260,7 +267,7 @@ test('Incremento 5: multisensor, validación y consultas compatibles', async (t)
       assert.match(sql, /RETURNING id/);
     }
     return { rows: [row] };
-  } });
+  });
   const app = createApp(insertReading, listReadings);
   const server = app.listen(0, '127.0.0.1');
   t.after(() => new Promise((resolve, reject) => {

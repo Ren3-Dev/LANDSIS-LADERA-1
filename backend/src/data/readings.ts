@@ -1,5 +1,6 @@
 import type { Reading, MpuReading } from '../readings/reading.js';
 import { getPool } from './postgres.js';
+import type { ReadingFilters } from '../readings/query.js';
 
 export interface PersistedReading extends Omit<Reading, keyof MpuReading> {
   accelX: number | null;
@@ -15,7 +16,7 @@ export interface PersistedReading extends Omit<Reading, keyof MpuReading> {
 }
 
 export type SaveReading = (reading: Reading) => Promise<PersistedReading>;
-export type ListReadings = (limit: number) => Promise<PersistedReading[]>;
+export type ListReadings = (limit: number, filters?: ReadingFilters) => Promise<PersistedReading[]>;
 
 interface ReadingRow {
   id: number;
@@ -34,21 +35,33 @@ interface ReadingRow {
 }
 
 export const insertReading: SaveReading = async (reading) => {
-  const result = await getPool().query<ReadingRow>(
-    `INSERT INTO sensor_readings (node_id, soil_moisture_raw, vibration_detected,
-       accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, temperature)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     RETURNING id, node_id, soil_moisture_raw, vibration_detected, received_at,
-       accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, temperature`,
-    [reading.nodeId, reading.soilMoistureRaw, reading.vibrationDetected,
-      reading.accelX ?? null, reading.accelY ?? null, reading.accelZ ?? null,
-      reading.gyroX ?? null, reading.gyroY ?? null, reading.gyroZ ?? null, reading.temperature ?? null],
-  );
-  const row = result.rows[0];
-  if (!row) {
-    throw new Error('La inserción no devolvió la medición.');
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('INSERT INTO nodes (node_id) VALUES ($1) ON CONFLICT DO NOTHING', [reading.nodeId]);
+    const result = await client.query<ReadingRow>(
+      `INSERT INTO sensor_readings (node_id, soil_moisture_raw, vibration_detected,
+         accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, temperature)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, node_id, soil_moisture_raw, vibration_detected, received_at,
+         accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, temperature`,
+      [reading.nodeId, reading.soilMoistureRaw, reading.vibrationDetected,
+        reading.accelX ?? null, reading.accelY ?? null, reading.accelZ ?? null,
+        reading.gyroX ?? null, reading.gyroY ?? null, reading.gyroZ ?? null, reading.temperature ?? null],
+    );
+    const row = result.rows[0];
+    if (!row) {
+      throw new Error('La inserción no devolvió la medición.');
+    }
+    const persisted = toReading(row);
+    await client.query('COMMIT');
+    return persisted;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
-  return toReading(row);
 };
 
 function toReading(row: ReadingRow): PersistedReading {
@@ -69,14 +82,27 @@ function toReading(row: ReadingRow): PersistedReading {
   };
 }
 
-export const listReadings: ListReadings = async (limit) => {
+export const listReadings: ListReadings = async (limit, filters = {}) => {
+  const parameters: (number | string)[] = [limit];
+  const clauses: string[] = [];
+  for (const [value, column, operator] of [
+    [filters.nodeId, 'node_id', '='],
+    [filters.from, 'received_at', '>='],
+    [filters.to, 'received_at', '<'],
+  ] as const) {
+    if (value !== undefined) {
+      parameters.push(value);
+      clauses.push(`${column} ${operator} $${parameters.length}`);
+    }
+  }
   const result = await getPool().query<ReadingRow>(
     `SELECT id, node_id, soil_moisture_raw, vibration_detected, received_at,
        accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, temperature
      FROM sensor_readings
+     ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
      ORDER BY received_at DESC, id DESC
      LIMIT $1`,
-    [limit],
+    parameters,
   );
   return result.rows.map(toReading);
 };
