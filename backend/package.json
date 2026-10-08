@@ -8,7 +8,9 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "npm run build && node --test tests/*.test.cjs"
+    "test": "npm run build && node --test tests/*.test.cjs",
+    "create-admin": "npm run build && node dist/create-admin.js",
+    "reset-password": "npm run build && node dist/reset-password.js"
   },
   "keywords": [],
   "author": "",

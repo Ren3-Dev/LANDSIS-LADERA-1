@@ -3,7 +3,7 @@ const { once } = require('node:events');
 const { test } = require('node:test');
 const nullMpu = { accelX: null, accelY: null, accelZ: null, gyroX: null, gyroY: null, gyroZ: null, temperature: null };
 const nullMpuRow = { accel_x: null, accel_y: null, accel_z: null, gyro_x: null, gyro_y: null, gyro_z: null, temperature: null };
-const { createApp } = require('../dist/app.js');
+const { createApp } = require('./authenticated-app.cjs');
 // Adaptar los dobles existentes a la conexión transaccional, manteniendo sus casos.
 function transactionalPool(query) {
   return { query, connect: async () => ({

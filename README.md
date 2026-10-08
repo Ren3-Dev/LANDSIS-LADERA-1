@@ -20,7 +20,7 @@ La comunicación del nodo está prevista mediante Wi-Fi. El backend utilizará N
 
 ## Estado actual
 
-El backend implementa health, recepción de mediciones, historial y última medición con Node.js, TypeScript, Express y PostgreSQL. El firmware ESP32 está implementado y fue validado físicamente; frontend/ todavía contiene únicamente .gitkeep.
+El backend implementa health, recepción de mediciones, historial y última medición con Node.js, TypeScript, Express y PostgreSQL. El firmware ESP32 está implementado y fue validado físicamente. La beta React + TypeScript del dashboard está en `frontend/`; consultar [su guía de ejecución y verificación](frontend/README.md).
 
 ## Telemetría multisensor (incremento 5)
 
@@ -51,3 +51,11 @@ POST conserva su URL y JSON legacy/multisensor. Registra automáticamente el nod
 Consultas inválidas, repetidas o con parámetros desconocidos devuelven 400. Historial sin coincidencias devuelve 200 con readings vacío; latest sin coincidencias devuelve 404. Los campos MPU y su semántica NULL permanecen iguales. Estas consultas permiten una beta con historial y gráficas recientes, no un historial ilimitado.
 
 Verificación del incremento: 161 pruebas automatizadas exitosas (incluidas las 129 previas), build TypeScript y GET locales contra PostgreSQL. No se modificó firmware ni se añadieron dependencias, CORS o lógica de riesgo.
+
+## Usuarios y autenticación (incremento 10)
+
+Login y sesión opaca en cookie HttpOnly; consultas del dashboard requieren usuario
+activo. ADMINISTRADOR gestiona usuarios; INVESTIGADOR y CONRED consultan dashboard.
+El POST IoT permanece compatible sin login humano. La migración 004 y bootstrap
+inicial están preparados, **pendientes de ejecución local**. Consultar la
+[guía de autenticación, pruebas y activación](docs/incremento-10-autenticacion.md).

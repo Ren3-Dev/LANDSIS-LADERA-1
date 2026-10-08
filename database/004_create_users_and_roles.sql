@@ -1,0 +1,17 @@
+-- Aplicar una sola vez. No modifica nodos ni mediciones.
+BEGIN;
+CREATE TABLE roles (
+    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE CHECK (name IN ('ADMINISTRADOR', 'INVESTIGADOR', 'CONRED'))
+);
+INSERT INTO roles (name) VALUES ('ADMINISTRADOR'), ('INVESTIGADOR'), ('CONRED');
+CREATE TABLE users (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(btrim(name)) BETWEEN 1 AND 100),
+    email TEXT NOT NULL UNIQUE CHECK (email = lower(btrim(email)) AND length(email) BETWEEN 3 AND 254),
+    password_hash TEXT NOT NULL,
+    role_id SMALLINT NOT NULL REFERENCES roles (id),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+COMMIT;

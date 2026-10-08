@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { once } = require('node:events');
-const { createApp } = require('../dist/app.js');
+const { createApp } = require('./authenticated-app.cjs');
 const { parseReadingQuery } = require('../dist/readings/query.js');
 
 test('Consultas HTTP por nodo y fechas', async (t) => {
