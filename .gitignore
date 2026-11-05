@@ -51,6 +51,9 @@ firmware/landsis_ladera1/secrets.h
 logs/
 *.log
 
+# Respaldos privados de PostgreSQL (pueden contener hashes y datos reales)
+/private-backups/
+
 # Cobertura
 coverage/
 .nyc_output/

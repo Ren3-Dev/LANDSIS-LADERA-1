@@ -2,7 +2,7 @@ import type { Reading, MpuReading } from '../readings/reading.js';
 import { getPool } from './postgres.js';
 import type { ReadingFilters } from '../readings/query.js';
 
-export interface PersistedReading extends Omit<Reading, keyof MpuReading> {
+export interface PersistedReading extends Omit<Reading, keyof MpuReading | 'orientation'> {
   accelX: number | null;
   accelY: number | null;
   accelZ: number | null;
@@ -102,6 +102,31 @@ export const listReadings: ListReadings = async (limit, filters = {}) => {
      ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
      ORDER BY received_at DESC, id DESC
      LIMIT $1`,
+    parameters,
+  );
+  return result.rows.map(toReading);
+};
+
+// Una fila real por fecha de recepción en Guatemala, no un promedio ni una inserción diaria.
+export const listDailyReadings: ListReadings = async (limit, filters = {}) => {
+  if (!filters.nodeId) throw new Error('nodeId es obligatorio para mediciones diarias.');
+  const parameters: (string | number)[] = [filters.nodeId];
+  const clauses = ['node_id = $1'];
+  for (const [key, operator] of [['from', '>='], ['to', '<']] as const) {
+    if (filters[key] !== undefined) {
+      parameters.push(filters[key]);
+      clauses.push(`received_at ${operator} $${parameters.length}`);
+    }
+  }
+  parameters.push(limit);
+  const result = await getPool().query<ReadingRow>(
+    `SELECT DISTINCT ON ((received_at AT TIME ZONE 'America/Guatemala')::date)
+       id, node_id, soil_moisture_raw, vibration_detected, received_at,
+       accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, temperature
+     FROM sensor_readings
+     WHERE ${clauses.join(' AND ')}
+     ORDER BY (received_at AT TIME ZONE 'America/Guatemala')::date DESC, received_at DESC, id DESC
+     LIMIT $${parameters.length}`,
     parameters,
   );
   return result.rows.map(toReading);

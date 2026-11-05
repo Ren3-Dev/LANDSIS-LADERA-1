@@ -1,3 +1,4 @@
+import { isOrientation, type Orientation } from './orientation.js';
 export interface MpuReading {
   accelX: number;
   accelY: number;
@@ -12,6 +13,7 @@ export interface Reading extends Partial<MpuReading> {
   nodeId: string;
   soilMoistureRaw: number;
   vibrationDetected: boolean;
+  orientation?: Orientation;
 }
 
 export function isReading(value: unknown): value is Reading {
@@ -26,7 +28,8 @@ export function isReading(value: unknown): value is Reading {
 
   return (
     (mpuCount === 0 || mpuCount === mpuFields.length) &&
-    Object.keys(reading).length === fields.length + mpuCount &&
+    Object.keys(reading).length === fields.length + mpuCount + (Object.hasOwn(reading, 'orientation') ? 1 : 0) &&
+    (!Object.hasOwn(reading, 'orientation') || (mpuCount === 7 && isOrientation(reading.orientation))) &&
     (mpuCount === 0 || mpuFields.every((field) =>
       typeof reading[field] === 'number' && Number.isFinite(reading[field]))) &&
     fields.every((field) => Object.hasOwn(reading, field)) &&

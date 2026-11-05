@@ -2,7 +2,8 @@ import { validPassword } from './password.js';
 export const roles = ['ADMINISTRADOR', 'INVESTIGADOR', 'CONRED'] as const;
 export type Role = typeof roles[number];
 export interface User { id: number; name: string; email: string; role: Role; active: boolean; createdAt: string }
-export interface PrivateUser extends User { passwordHash: string }
+export interface AccountUser extends User { credentialVersion: number }
+export interface PrivateUser extends AccountUser { passwordHash: string }
 export interface NewUser { name: string; email: string; password: string; role: Role; active: boolean }
 export type UserPatch = Partial<Pick<User, 'name' | 'role' | 'active'>>;
 export function publicUser(user: User): User {

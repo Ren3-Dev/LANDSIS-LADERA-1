@@ -1,0 +1,4 @@
+Coloca aquí tu imagen con el nombre exacto: despedida-nodo.jpg
+Ruta: frontend/public/images/despedida-nodo.jpg
+Usa una imagen JPG. Aparece solo en el aviso especial del dashboard.
+Si no hay imagen, el aviso funciona sin mostrar una imagen rota.

@@ -10,7 +10,9 @@
     "start": "node dist/server.js",
     "test": "npm run build && node --test tests/*.test.cjs",
     "create-admin": "npm run build && node dist/create-admin.js",
-    "reset-password": "npm run build && node dist/reset-password.js"
+    "reset-password": "npm run build && node dist/reset-password.js",
+    "smtp:check": "npm run build && node dist/check-smtp.js",
+    "smtp": "npm run smtp:check --"
   },
   "keywords": [],
   "author": "",
@@ -19,11 +21,13 @@
   "dependencies": {
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "nodemailer": "10.1.2",
     "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "^8.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"

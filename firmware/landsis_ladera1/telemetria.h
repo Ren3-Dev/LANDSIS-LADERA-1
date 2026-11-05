@@ -9,10 +9,16 @@
 #include "secrets.h"
 
 // Parámetros de prueba de comunicación; no son calibraciones de sensores.
-const unsigned long INTERVALO_ENVIO_MS = 5000;
+const unsigned long INTERVALO_ENVIO_MS = 10000;
 const unsigned long INTERVALO_RECONEXION_MS = 10000;
 const int32_t HTTP_CONNECT_TIMEOUT_MS = 2000;
 const uint16_t HTTP_READ_TIMEOUT_MS = 2000;
+
+struct OrientacionEnvio {
+  bool calibrada, valida;
+  float roll, pitch, baselineRoll, baselinePitch, deltaRoll, deltaPitch;
+  unsigned estado, precautionCount, alertCount, criticalCount;
+};
 
 struct LecturaEnvio {
   int humedadRaw;
@@ -21,6 +27,7 @@ struct LecturaEnvio {
   float gyroX, gyroY, gyroZ;
   float temperatura;
   uint32_t generacion;
+  OrientacionEnvio orientacion;
 };
 
 struct ResultadoEnvio {
@@ -68,16 +75,32 @@ void tareaComunicacion(void*) {
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("HTTP omitido: WiFi no disponible; se conserva vibración.");
     } else {
-      char json[768];
+      char orientacionJson[512];
+      const auto& o = lectura.orientacion;
+      const char* estados[] = {"NORMAL", "PRECAUCION", "ALERTA", "CRITICO"};
+      int longitudOrientacion;
+      if (!o.calibrada || !o.valida) {
+        longitudOrientacion = snprintf(orientacionJson, sizeof(orientacionJson),
+          "{\"status\":\"%s\"}", o.calibrada ? "unavailable" : "calibrating");
+      } else {
+        longitudOrientacion = snprintf(orientacionJson, sizeof(orientacionJson),
+          "{\"status\":\"ready\",\"roll\":%.6f,\"pitch\":%.6f,"
+          "\"baselineRoll\":%.6f,\"baselinePitch\":%.6f,\"deltaRoll\":%.6f,\"deltaPitch\":%.6f,"
+          "\"inclinationState\":\"%s\",\"precautionCount\":%u,\"alertCount\":%u,\"criticalCount\":%u}",
+          o.roll, o.pitch, o.baselineRoll, o.baselinePitch, o.deltaRoll, o.deltaPitch,
+          estados[o.estado], o.precautionCount, o.alertCount, o.criticalCount);
+      }
+      char json[1024];
       int longitud = snprintf(json, sizeof(json),
         "{\"nodeId\":\"LADERA-1\",\"soilMoistureRaw\":%d,"
         "\"vibrationDetected\":%s,\"accelX\":%.6f,\"accelY\":%.6f,"
         "\"accelZ\":%.6f,\"gyroX\":%.6f,\"gyroY\":%.6f,"
-        "\"gyroZ\":%.6f,\"temperature\":%.6f}",
+        "\"gyroZ\":%.6f,\"temperature\":%.6f,\"orientation\":%s}",
         lectura.humedadRaw, lectura.vibracion ? "true" : "false",
         lectura.accelX, lectura.accelY, lectura.accelZ,
-        lectura.gyroX, lectura.gyroY, lectura.gyroZ, lectura.temperatura);
-      if (longitud <= 0 || static_cast<size_t>(longitud) >= sizeof(json)) {
+        lectura.gyroX, lectura.gyroY, lectura.gyroZ, lectura.temperatura, orientacionJson);
+      if (longitudOrientacion <= 0 || static_cast<size_t>(longitudOrientacion) >= sizeof(orientacionJson) ||
+          longitud <= 0 || static_cast<size_t>(longitud) >= sizeof(json)) {
         Serial.println("HTTP omitido: JSON excede el buffer.");
       } else {
         WiFiClient cliente;

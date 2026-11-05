@@ -51,3 +51,27 @@ test('Una sesión vencida en telemetría notifica al contenedor',async t=>{
   await apiRequest('readings');assert.equal(expired,true);
 });
 
+
+test('Eliminar usuario envía DELETE protegido y admite 204 sin JSON', async t => {
+  const original=globalThis.fetch; t.after(()=>{globalThis.fetch=original;});
+  globalThis.fetch=async(url,options)=>{
+    assert.equal(String(url),'/api/v1/users/9'); assert.equal(options?.method,'DELETE');
+    assert.equal(options?.credentials,'same-origin');
+    assert.equal((options?.headers as Record<string,string>)['X-Landsis-Request'],'1');
+    assert.equal((options?.headers as Record<string,string>)['Content-Type'],'application/json');
+    return new Response(null,{status:204});
+  };
+  assert.equal(await jsonRequest('users/9','DELETE'),undefined);
+});
+test('Acciones de usuarios ocultan Eliminar para ADMINISTRADOR y conservan Editar', async () => {
+  const { UserActions } = await import('../src/components/UsersPanel');
+  for (const role of ['ADMINISTRADOR','INVESTIGADOR','CONRED'] as const) {
+    for (const active of [true,false]) {
+      const html=renderToStaticMarkup(<UserActions user={{...user,role,active}} disabled={false} onEdit={()=>{}} onDelete={()=>{}}/>);
+      assert.match(html,/>Editar<\/button>/);
+      assert.equal(html.includes('>Eliminar</button>'),role!=='ADMINISTRADOR');
+      const busy=renderToStaticMarkup(<UserActions user={{...user,role,active}} disabled={true} onEdit={()=>{}} onDelete={()=>{}}/>);
+      assert.equal((busy.match(/disabled=""/g)||[]).length,role==='ADMINISTRADOR'?1:2);
+    }
+  }
+});

@@ -191,8 +191,10 @@ separado y no se modifica el esquema. No cambia email, nombre, rol ni estado act
 Si el usuario no existe o la confirmación/política falla, informa sin cambiar cuentas.
 No imprime ni consulta hashes. Una cuenta inactiva sigue inactiva tras el reset.
 
-Las sesiones existentes no se revocan por cambiar el hash; para invalidarlas,
-reiniciar el backend. El acceso a este comando depende del acceso local a la
+Desde el incremento 2 de recuperación, el comando incrementa credential_version
+y elimina tokens pendientes en la misma transacción; las sesiones anteriores
+se rechazan en su siguiente solicitud. Requiere aplicar primero la migración 005;
+ver [guía de recuperación](recuperacion-cuentas-incremento-2.md). El acceso a este comando depende del acceso local a la
 configuración PostgreSQL: no es una funcionalidad expuesta en la API.
 
 Verificación posterior a este cambio: build backend exitoso y 191 pruebas aprobadas

@@ -114,3 +114,11 @@ Se cargó una compilación nueva para el hotspot dedicado de Windows en 2.4 GHz,
 El usuario apagó únicamente el hotspot, manteniendo el WiFi principal y el backend activos. Durante una ventana de 25 segundos continuaron las lecturas multisensor, se omitió HTTP por WiFi no disponible y se observaron intentos de reconexión separados por aproximadamente diez segundos. El core indicó que ya estaba conectando (estado 6); el firmware informó el resultado y esperó otro ciclo. No se observaron mensajes de arranque en esa ventana. Health local siguió respondiendo y la base tenía 866 filas, máximo ID 866.
 
 El usuario restauró el hotspot sin pulsar RESET ni BOOT. En la siguiente ventana de 25 segundos se observaron cinco HTTP 201 (70, 71, 70, 70 y 91 ms), con lecturas continuas. PostgreSQL confirmó nueve filas posteriores, IDs 867–875; las tres últimas consultadas contenían los siete campos MPU no NULL. La transición textual WiFi: recuperado no quedó capturada porque la conexión ya estaba restablecida al abrir el monitor. La evidencia confirma recuperación de comunicación y persistencia sin intervención de reinicio durante esta prueba; no demuestra estabilidad prolongada. A/B/C quedan validadas para los escenarios y ventanas descritos. El cierre del incremento 7 se registra en un commit local, sin push.
+
+## Orientación relativa experimental
+
+El sketch incorpora baseline de arranque, roll/pitch filtrados y persistencia local. Consultar [procedimiento y límites](PRUEBAS_ORIENTACION.md). El JSON HTTP permanece intacto. Esta versión mantiene INTERVALO_ENVIO_MS = 10000; las menciones de 5000 ms anteriores corresponden a incrementos históricos.
+
+### Integración posterior con dashboard
+
+La [ampliación opcional de orientación](../../docs/orientacion-en-dashboard.md) agrega `orientation` al POST conservando los campos anteriores. Actualizar primero el backend compatible, luego cargar este firmware. El cálculo y los umbrales no cambian; el JSON original intacto descrito arriba corresponde a la etapa anterior a esta ampliación. La orientación del dashboard es de la última medición, no un historial persistido.

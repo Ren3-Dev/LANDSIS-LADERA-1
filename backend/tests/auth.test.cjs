@@ -21,10 +21,12 @@ test('Hash scrypt, sal aleatoria y política', async () => {
 });
 test('Sesiones expiran, son opacas y se revocan', () => {
   let now=0; const sessions=new Sessions(()=>now);
-  const token=sessions.create(7); assert.equal(sessions.userId(token),7);
+  const token=sessions.create(7,0); assert.equal(sessions.userId(token),7);
+  assert.equal(sessions.matchesVersion(token,0),true); assert.equal(sessions.matchesVersion(token,1),false);
+  assert.throws(()=>sessions.create(7,undefined)); assert.throws(()=>sessions.create(7,-1));
   assert.equal(sessions.userId('invalid'),null);
   now=8*60*60*1000; assert.equal(sessions.userId(token),null);
-  const other=sessions.create(9); sessions.delete(other); assert.equal(sessions.userId(other),null);
+  const other=sessions.create(9,0); sessions.delete(other); assert.equal(sessions.userId(other),null);
 });
 test('Auth y roles por HTTP', async t => {
   const hash=await hashPassword(password);
@@ -33,14 +35,14 @@ test('Auth y roles por HTTP', async t => {
     {id:2,name:'Investigador',email:'research@example.invalid',role:'INVESTIGADOR',active:true,createdAt:new Date().toISOString(),passwordHash:hash},
     {id:3,name:'Inactivo',email:'inactive@example.invalid',role:'CONRED',active:false,createdAt:new Date().toISOString(),passwordHash:hash},
     {id:4,name:'CONRED',email:'conred@example.invalid',role:'CONRED',active:true,createdAt:new Date().toISOString(),passwordHash:hash},
-  ];
+  ].map(user=>({...user,credentialVersion:0}));
   const store={
     findByEmail:async email=>users.find(u=>u.email===email)||null,
     findById:async id=>users.find(u=>u.id===id)||null,
     list:async()=>users,
     create:async(input,passwordHash)=>{
       if(users.some(u=>u.email===input.email)) throw new UserConflict();
-      const user={...input,id:users.length+1,createdAt:new Date().toISOString(),passwordHash}; users.push(user);return user;
+      const user={...input,id:users.length+1,createdAt:new Date().toISOString(),passwordHash,credentialVersion:0}; users.push(user);return user;
     },
     patch:async(id,patch)=>{const user=users.find(u=>u.id===id);if(!user)return null;
       if(user.role==='ADMINISTRADOR' && (patch.active===false || (patch.role&&patch.role!=='ADMINISTRADOR')) && users.filter(u=>u.active&&u.role==='ADMINISTRADOR').length===1)throw new LastAdmin();
@@ -58,7 +60,7 @@ test('Auth y roles por HTTP', async t => {
   await t.test('login correcto y cookie segura sin hash/token en JSON',async()=>{
     const response=await request('/auth/login','POST',{email:' ADMIN@example.invalid ',password});assert.equal(response.status,200);
     const cookie=response.headers.get('set-cookie');assert.match(cookie,/HttpOnly/);assert.match(cookie,/SameSite=Strict/);assert.match(cookie,/Max-Age=28800/);
-    adminToken=cookie.split(';')[0].split('=')[1]; const data=await response.json();assert.equal(data.user.role,'ADMINISTRADOR');assert.equal(JSON.stringify(data).includes(hash),false);assert.equal(data.token,undefined);
+    adminToken=cookie.split(';')[0].split('=')[1]; const data=await response.json();assert.equal(data.user.role,'ADMINISTRADOR');assert.equal(JSON.stringify(data).includes(hash),false);assert.equal(data.token,undefined);assert.equal('credentialVersion' in data.user,false);
   });
   await t.test('contraseña incorrecta y correo inexistente mismo error',async()=>{
     const wrong=await request('/auth/login','POST',{email:users[0].email,password:'incorrecta'});

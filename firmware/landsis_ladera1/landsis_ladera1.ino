@@ -3,6 +3,7 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include "telemetria.h"
+#include "orientacion.h"
 
 // =====================================================
 // LANDSIS LADERA-1
@@ -27,6 +28,7 @@ Adafruit_MPU6050 mpu;
 
 bool mpuDisponible = false;
 uint8_t direccionMPU = 0;
+Orientacion orientacion;
 
 // -----------------------------
 // Vibración
@@ -156,6 +158,8 @@ void setup() {
     );
 
     Serial.println("MPU6050 configurado correctamente.");
+    orientacion.iniciar(millis());
+    Serial.println("Baseline: mantener el nodo inmovil durante espera de 3 s y 75 muestras (~75 s).");
   }
 
   Serial.println();
@@ -237,7 +241,7 @@ void loop() {
       sensors_event_t giroscopio;
       sensors_event_t temp;
 
-      mpu.getEvent(
+      bool lecturaMPUCorrecta = mpu.getEvent(
         &aceleracion,
         &giroscopio,
         &temp
@@ -252,6 +256,7 @@ void loop() {
       gyroZ = giroscopio.gyro.z;
 
       temperatura = temp.temperature;
+      orientacion.actualizar(accelX, accelY, accelZ, lecturaMPUCorrecta, millis());
     }
 
 
@@ -310,6 +315,14 @@ void loop() {
       Serial.print(temperatura, 2);
 
       Serial.println(" C");
+      Serial.printf("Inclinacion EXPERIMENTAL: %s | baseline %u/75 | persistencia P/A/C %u/%u/%u de 6\n",
+        orientacion.nombreEstado(), orientacion.muestras,
+        orientacion.contadores[0], orientacion.contadores[1], orientacion.contadores[2]);
+      if (orientacion.calibrada && orientacion.valida) {
+        Serial.printf("Roll %.4f | Pitch %.4f | Baseline Roll %.4f | Baseline Pitch %.4f | Delta Roll %.4f | Delta Pitch %.4f grados\n",
+          orientacion.roll, orientacion.pitch, orientacion.baselineRoll, orientacion.baselinePitch,
+          orientacion.deltaRoll, orientacion.deltaPitch);
+      }
     }
 
 
@@ -388,7 +401,11 @@ void loop() {
         LecturaEnvio lectura = {
           humedadRaw, vibracionPendiente,
           accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temperatura,
-          generacionVibracion
+          generacionVibracion,
+          {orientacion.calibrada, orientacion.valida,
+           orientacion.roll, orientacion.pitch, orientacion.baselineRoll, orientacion.baselinePitch,
+           orientacion.deltaRoll, orientacion.deltaPitch, orientacion.estado,
+           orientacion.contadores[0], orientacion.contadores[1], orientacion.contadores[2]}
         };
         envioEnCurso = xQueueSend(colaLecturas, &lectura, 0) == pdTRUE;
       }

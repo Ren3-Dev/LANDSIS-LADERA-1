@@ -1,13 +1,19 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, jsonRequest } from '../api/http';
 import { roles, type Role, type User } from '../types/user';
 
 type Draft = { name: string; email: string; password: string; confirmation: string; role: Role; active: boolean };
 const blank: Draft = { name: '', email: '', password: '', confirmation: '', role: 'INVESTIGADOR', active: true };
+export function UserActions({ user, disabled, onEdit, onDelete }: { user: User; disabled: boolean; onEdit: () => void; onDelete: () => void }) {
+  return <><button className="secondary" disabled={disabled} onClick={onEdit}>Editar</button>{user.role !== 'ADMINISTRADOR' && <> <button className="secondary" disabled={disabled} onClick={onDelete}>Eliminar</button></>}</>;
+}
 export default function UsersPanel({ onUserChange }: { onUserChange: (user: User) => void }) {
   const [users, setUsers] = useState<User[]>([]), [status, setStatus] = useState<'loading'|'ready'|'error'>('loading');
   const [reload, setReload] = useState(0), [editing, setEditing] = useState<User | null>(null), [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState<Draft>(blank), [error, setError] = useState(''), [busy, setBusy] = useState(false), [success, setSuccess] = useState('');
+  const [deleting, setDeleting] = useState<User | null>(null), [deleteError, setDeleteError] = useState('');
+  const deleteDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => { if (deleting) deleteDialog.current?.showModal(); }, [deleting]);
   useEffect(() => {
     let active = true; setStatus('loading');
     jsonRequest<{ users: User[] }>('users').then(data => { if (active) { setUsers(data.users); setStatus('ready'); } })
@@ -30,8 +36,22 @@ export default function UsersPanel({ onUserChange }: { onUserChange: (user: User
     } catch (error) { setError(error instanceof ApiError ? error.message : 'No se pudo conectar con el backend.'); setDraft(v => ({ ...v, password: '', confirmation: '' })); }
     finally { setBusy(false); }
   }
-  return <main><div className="section-heading"><div><p className="eyebrow">ADMINISTRACIÓN</p><h1>Usuarios</h1><p className="subtitle">Nombre, rol y estado de las cuentas del sistema.</p></div><button onClick={() => open(null)} disabled={busy}>+ Nuevo usuario</button></div>
+  async function remove() {
+    if (!deleting || busy) return;
+    setBusy(true); setDeleteError(''); setSuccess('');
+    try {
+      await jsonRequest(`users/${deleting.id}`, 'DELETE');
+      setDeleting(null); setSuccess('Usuario eliminado.'); setReload(v => v + 1);
+    } catch (error) { setDeleteError(error instanceof ApiError ? error.message : 'No se pudo conectar con el backend.'); }
+    finally { setBusy(false); }
+  }
+  return <main><div className="section-heading"><div><p className="eyebrow">ADMINISTRACIÓN</p><h1>Usuarios</h1><p className="subtitle">Nombre, rol y estado de las cuentas del sistema.</p></div><button onClick={() => open(null)} disabled={busy || !!deleting}>+ Nuevo usuario</button></div>
     {success && <p className="notice" role="status">{success}</p>}
+    {deleting && <dialog ref={deleteDialog} className="panel" aria-labelledby="delete-title" aria-describedby="delete-description" aria-busy={busy} onCancel={event => { event.preventDefault(); if (!busy) setDeleting(null); }}>
+      <h2 id="delete-title">Eliminar usuario</h2><p id="delete-description">¿Eliminar a {deleting.name} ({deleting.email})? La cuenta perderá acceso al sistema y se conservarán los datos históricos.</p>
+      {deleteError && <p className="notice error" role="alert">{deleteError}</p>}
+      <div className="nav-actions"><button autoFocus className="secondary" disabled={busy} onClick={() => setDeleting(null)}>Cancelar</button><button disabled={busy} onClick={remove}>{busy ? 'Eliminando…' : 'Eliminar'}</button></div>
+    </dialog>}
     {status === 'loading' && <p className="notice" role="status">Cargando usuarios…</p>}
     {status === 'error' && <div className="notice error" role="alert">No se pudieron consultar los usuarios. Verifica tu sesión y permiso de administrador. <button onClick={() => setReload(v => v + 1)}>Reintentar</button></div>}
     {showForm && <section className="panel"><h2>{editing ? 'Editar usuario' : 'Nuevo usuario'}</h2><form onSubmit={submit} className="user-form" aria-busy={busy}><fieldset disabled={busy}>
@@ -42,7 +62,7 @@ export default function UsersPanel({ onUserChange }: { onUserChange: (user: User
       <div className="checkbox-field"><label><input type="checkbox" checked={draft.active} onChange={e => setDraft(v => ({ ...v, active: e.target.checked }))}/> Usuario activo</label></div></div>
       {error && <p className="notice error" role="alert">{error}</p>}<div className="nav-actions"><button type="submit">{busy ? 'Guardando…' : 'Guardar usuario'}</button><button type="button" className="secondary" onClick={() => { setShowForm(false); setDraft({ ...blank }); }}>Cancelar</button></div>
     </fieldset></form></section>}
-    {status === 'ready' && <section className="panel">{users.length ? <div className="table-scroll"><table><thead><tr>{['Nombre', 'Correo', 'Rol', 'Estado', 'Acción'].map(h => <th scope="col" key={h}>{h}</th>)}</tr></thead><tbody>{users.map(user => <tr key={user.id}><td>{user.name}</td><td>{user.email}</td><td>{user.role}</td><td>{user.active ? 'Activo' : 'Inactivo'}</td><td><button className="secondary" disabled={busy} onClick={() => open(user)}>Editar</button></td></tr>)}</tbody></table></div> : <p className="empty">No hay usuarios disponibles.</p>}</section>}
+    {status === 'ready' && <section className="panel">{users.length ? <div className="table-scroll"><table><thead><tr>{['Nombre', 'Correo', 'Rol', 'Estado', 'Acción'].map(h => <th scope="col" key={h}>{h}</th>)}</tr></thead><tbody>{users.map(user => <tr key={user.id}><td>{user.name}</td><td>{user.email}</td><td>{user.role}</td><td>{user.active ? 'Activo' : 'Inactivo'}</td><td><UserActions user={user} disabled={busy || !!deleting} onEdit={() => open(user)} onDelete={() => { setShowForm(false); setDeleting(user); setDeleteError(''); setSuccess(''); }}/></td></tr>)}</tbody></table></div> : <p className="empty">No hay usuarios disponibles.</p>}</section>}
   </main>;
 }
 

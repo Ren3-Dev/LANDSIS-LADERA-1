@@ -1,5 +1,23 @@
 # Dashboard beta — incremento 9
 
+En Inclinación relativa se incluye una referencia SVG del nodo por eje (roll/pitch): gris discontinuo para el baseline y azul para el delta recibido, escala 1:1 y transición visual suave. Sin orientación válida o con recepción vencida se oculta la silueta activa y se muestra estado neutral. Es una vista esquemática relativa, no desplazamiento del terreno ni orientación verificada de las caras físicas de la caja. Respeta movimiento reducido. No requiere librerías, cambios de firmware ni conexión USB.
+
+Controles de actualización junto al título, sin el recuadro de selección anterior: Actualizar ahora y menú de frecuencia de pantalla (10 s para pruebas, 5/10/15/30 min, 1 h o solo manual). Solo configura consultas del navegador; el envío del ESP32 sigue en 10 s. Para seguimiento del semáforo se recomienda 10 s; con consultas espaciadas la lectura en pantalla vence a los 60 s y el semáforo queda gris hasta actualizar.
+
+La interfaz actual corresponde al único nodo físico **LADERA-1**. Dashboard, Historial y Estado consultan ese identificador directamente; no hay selector de nodos ni paso de selección para el usuario. Se conservan Actualizar datos y los filtros de fechas/límite del historial.
+
+[Vigencia del semáforo](../docs/vigencia-del-semaforo.md): Dashboard y Estado del nodo se actualizan cada 10 segundos. A los 60 segundos sin recepción nueva, el semáforo queda gris; consultar una fila antigua no la vuelve reciente. Historial y resumen diario mantienen consulta manual.
+
+El [historial con mediciones diarias](../docs/mediciones-diarias.md) muestra primero la última medición real por día del nodo, usando fechas de Guatemala, y después conserva la gráfica y el historial detallado. Ambos listados se consultan de manera independiente para evitar resumir únicamente las últimas 50 lecturas.
+
+Distribución actual del dashboard: semáforo experimental primero; tarjetas Humedad / Vibración / Inclinación; detalle de inclinación relativa con temperatura interna del MPU6050 al pie; recepción y fecha al final. La telemetría cruda MPU se retiró del resumen principal y se conserva en los detalles del historial.
+
+El [semáforo experimental de inclinación](../docs/propuesta-semaforo-experimental.md) activa el nivel confirmado por el firmware en la última medición, con color y texto. El riesgo global combinado permanece no evaluado; humedad y vibración no modifican este indicador.
+
+La [integración posterior de orientación](../docs/orientacion-en-dashboard.md) habilita los grados del firmware en la última medición mediante un bloque opcional validado. Se conservan en memoria del backend, sin migración ni historial angular. Tras actualizar, usar Actualizar datos; la integración requiere cargar el firmware transmisor correspondiente.
+
+La [revisión de telemetría del 3 de noviembre de 2026](REVISION_TELEMETRIA.md) documenta el resumen actualizado: temperatura y vectores MPU visibles con unidades, recepción sin inferir conexión en tiempo real, inclinación relativa aún no transmitida y propuesta de cuatro niveles de riesgo inactivos. No cambia contratos ni requiere migraciones.
+
 El incremento 10 agrega login, sesión y Usuarios exclusivos ADMINISTRADOR. Antes
 de ejecutar con la nueva API, seguir la [guía de activación](../docs/incremento-10-autenticacion.md)
 para migración 004 y bootstrap. Las verificaciones reales descritas más abajo

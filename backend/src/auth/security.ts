@@ -2,7 +2,8 @@ import { Router, json, type Request, type RequestHandler, type ErrorRequestHandl
 import { Sessions, sessionAgeSeconds } from './sessions.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { isObject, validEmail, publicUser, parseNewUser, parseUserPatch, type Role, type User } from './user.js';
-import { userStore, UserConflict, LastAdmin, type UserStore } from '../data/users.js';
+import { userStore, UserConflict, LastAdmin, SelfDeletion, AdminDeletion, type UserStore } from '../data/users.js';
+import { createRecoveryRouter, type RecoveryOptions } from '../routes/password-recovery.js';
 
 const cookieName = 'landsis_session';
 function cookieToken(req: Request): string {
@@ -17,7 +18,7 @@ export function requireRole(role: Role): RequestHandler {
     next();
   };
 }
-export function createSecurity(store: UserStore = userStore, sessions = new Sessions()) {
+export function createSecurity(store: UserStore = userStore, sessions = new Sessions(), recovery: RecoveryOptions = {}) {
   const cookieOptions = { httpOnly: true, sameSite: 'strict' as const, secure: process.env.NODE_ENV === 'production', path: '/api' };
   const requireAuth: RequestHandler = async (req, res, next) => {
     res.set('Cache-Control', 'no-store');
@@ -25,7 +26,7 @@ export function createSecurity(store: UserStore = userStore, sessions = new Sess
     if (id === null) { res.status(401).json({ message: 'Debes iniciar sesión.' }); return; }
     try {
       const user = await store.findById(id);
-      if (!user?.active) { sessions.delete(token); res.clearCookie(cookieName, cookieOptions); res.status(401).json({ message: 'La sesión ya no está disponible.' }); return; }
+      if (!user?.active || !sessions.matchesVersion(token, user.credentialVersion)) { sessions.delete(token); res.clearCookie(cookieName, cookieOptions); res.status(401).json({ message: 'La sesión ya no está disponible.' }); return; }
       res.locals.user = publicUser(user); next();
     } catch { res.status(503).json({ message: 'No se pudo verificar la sesión.' }); }
   };
@@ -33,7 +34,9 @@ export function createSecurity(store: UserStore = userStore, sessions = new Sess
   // No habilitar CORS: combinar con cookie Strict y cuerpos exclusivamente JSON.
   const mutation: RequestHandler = (req, res, next) => {
     if (req.get('X-Landsis-Request') !== '1') { res.status(403).json({ message: 'Solicitud no permitida.' }); return; }
-    if (!req.is('application/json')) { res.status(415).json({ message: 'Se requiere JSON.' }); return; }
+    // req.is devuelve null sin cuerpo; DELETE admite 204 sin enviar un JSON vacío.
+    const emptyJsonDelete = req.method === 'DELETE' && req.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() === 'application/json';
+    if (!req.is('application/json') && !emptyJsonDelete) { res.status(415).json({ message: 'Se requiere JSON.' }); return; }
     next();
   };
   const authRouter = Router(), usersRouter = Router();
@@ -63,7 +66,7 @@ export function createSecurity(store: UserStore = userStore, sessions = new Sess
       if (!user || !valid) { res.status(401).json({ message: 'Correo o contraseña inválidos.' }); return; }
       if (!user.active) { res.status(403).json({ message: 'Tu usuario está inactivo. Contacta al administrador.' }); return; }
       sessions.delete(cookieToken(req));
-      const token = sessions.create(user.id);
+      const token = sessions.create(user.id, user.credentialVersion);
       res.cookie(cookieName, token, { ...cookieOptions, maxAge: sessionAgeSeconds * 1000 });
       res.status(200).json({ user: publicUser(user) });
     } catch { res.status(503).json({ message: 'No se pudo iniciar sesión. Intenta de nuevo.' }); }
@@ -101,11 +104,25 @@ export function createSecurity(store: UserStore = userStore, sessions = new Sess
       res.status(503).json({ message: 'No se pudo actualizar el usuario.' });
     }
   });
+  usersRouter.delete('/:id', mutation, async (req, res) => {
+    const id = Number(req.params.id);
+    if (!/^[1-9]\d*$/.test(String(req.params.id)) || !Number.isSafeInteger(id)) { res.status(400).json({ message: 'Usuario inválido.' }); return; }
+    try {
+      if (!await store.remove(id, (res.locals.user as User).id)) { res.status(404).json({ message: 'Usuario no encontrado.' }); return; }
+      res.status(204).end();
+    } catch (error) {
+      if (error instanceof SelfDeletion) { res.status(409).json({ message: 'No puedes eliminar tu propia cuenta.' }); return; }
+      if (error instanceof AdminDeletion) { res.status(409).json({ message: 'No se pueden eliminar cuentas administradoras.' }); return; }
+      if (error instanceof LastAdmin) { res.status(409).json({ message: 'Debe quedar al menos un administrador activo.' }); return; }
+      res.status(503).json({ message: 'No se pudo eliminar el usuario.' });
+    }
+  });
   const invalidJson: ErrorRequestHandler = (error: unknown, _req, res, next) => {
     if (isObject(error) && (error.type === 'entity.parse.failed' || error.type === 'entity.too.large')) {
       res.status(error.type === 'entity.too.large' ? 413 : 400).json({ message: 'El cuerpo JSON es inválido o demasiado grande.' }); return;
     } next(error);
   };
+  authRouter.use(createRecoveryRouter({ ...recovery, users: recovery.users ?? store }, mutation));
   authRouter.use(invalidJson); usersRouter.use(invalidJson);
   return { requireAuth, authRouter, usersRouter };
 }

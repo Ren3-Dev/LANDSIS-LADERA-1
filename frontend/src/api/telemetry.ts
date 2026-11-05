@@ -1,5 +1,6 @@
 import { mpuFields, type Node, type Reading } from '../types/telemetry';
 import { apiRequest } from './http';
+import { isOrientation } from '../types/orientation';
 
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -14,6 +15,7 @@ function isReading(value: unknown): value is Reading {
     && Number.isInteger(r.soilMoistureRaw) && r.soilMoistureRaw >= 0 && r.soilMoistureRaw <= 4095
     && typeof r.vibrationDetected === 'boolean' && typeof r.receivedAt === 'string'
     && Number.isFinite(Date.parse(r.receivedAt))
+    && (!Object.hasOwn(r, 'orientation') || (isOrientation(r.orientation) && mpuFields.every(k => typeof r[k] === 'number')))
     && (mpuFields.every(k => r[k] === null) || mpuFields.every(k => typeof r[k] === 'number' && Number.isFinite(r[k])));
 }
 async function request(path: string, signal: AbortSignal, allowEmpty = false): Promise<unknown> {
@@ -33,13 +35,20 @@ export async function getLatest(nodeId: string, signal: AbortSignal): Promise<Re
   if (!object(data) || !isReading(data.reading) || data.reading.nodeId !== nodeId) throw new Error('Invalid reading');
   return data.reading;
 }
-export async function getHistory(nodeId: string, signal: AbortSignal, filters: { limit: number; from?: string; to?: string } = { limit: 50 }): Promise<Reading[]> {
+async function loadHistory(path: string, nodeId: string, signal: AbortSignal, filters: { limit: number; from?: string; to?: string }): Promise<Reading[]> {
   const query = new URLSearchParams({ nodeId, limit: String(filters.limit) });
   if (filters.from) query.set('from', filters.from);
   if (filters.to) query.set('to', filters.to);
-  const data = await request(`readings?${query}`, signal);
+  const data = await request(`${path}?${query}`, signal);
   if (!object(data) || !Array.isArray(data.readings) || !data.readings.every(isReading)
     || !data.readings.every(r => r.nodeId === nodeId)) throw new Error('Invalid history');
   return data.readings;
+}
+
+export function getHistory(nodeId: string, signal: AbortSignal, filters: { limit: number; from?: string; to?: string } = { limit: 50 }): Promise<Reading[]> {
+  return loadHistory('readings', nodeId, signal, filters);
+}
+export function getDailyHistory(nodeId: string, signal: AbortSignal, filters: { limit: number; from?: string; to?: string } = { limit: 50 }): Promise<Reading[]> {
+  return loadHistory('readings/daily', nodeId, signal, filters);
 }
 

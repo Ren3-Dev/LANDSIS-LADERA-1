@@ -7,10 +7,10 @@ import { formatVibration } from '../src/presentation';
 import { getHistory, getLatest } from '../src/api/telemetry';
 import type { Reading } from '../src/types/telemetry';
 const reading: Reading = { id:1,nodeId:'PRUEBA',soilMoistureRaw:0,vibrationDetected:false,receivedAt:'2026-10-05T12:00:00Z',accelX:null,accelY:null,accelZ:null,gyroX:null,gyroY:null,gyroZ:null,temperature:null };
-test('Dashboard muestra RAW, vibración y riesgo pendiente sin conversiones', () => {
+test('Dashboard muestra humedad relativa, RAW y vibración', () => {
   for (const detected of [true,false]) {
     const html=renderToStaticMarkup(<DashboardView reading={{...reading,vibrationDetected:detected}} nodeId="PRUEBA"/>);
-    assert.match(html,/Lectura RAW — pendiente de calibración/); assert.match(html,/Pendiente de configuración/); assert.ok(html.includes(formatVibration(detected))); assert.doesNotMatch(html,/humedad %|ambiental|averiado/);
+    assert.match(html,/Humedad relativa del sensor/); assert.match(html,/Pendiente de configuración/); assert.ok(html.includes(formatVibration(detected))); assert.doesNotMatch(html,/humedad %|ambiental|averiado/);
   }
 });
 test('Estado del nodo distingue bloque MPU completo y null sin diagnosticar fallos ADC', () => {
@@ -28,7 +28,7 @@ test('Vistas manejan nodo sin mediciones e historial vacío', () => {
 });
 test('Historial muestra tabla simplificada, gráfico y detalles MPU', () => {
   const html=renderToStaticMarkup(<HistoryView readings={[reading]}/>);
-  for (const text of ['Fecha/hora','Humedad RAW','Vibración','MPU disponible','Ver MPU','No detectada','Sin telemetría MPU']) assert.ok(html.includes(text));
+  for (const text of ['Fecha/hora','Humedad (%) / RAW','Vibración','MPU disponible','Ver MPU','No detectada','Sin telemetría MPU']) assert.ok(html.includes(text));
 });
 test('API historial envía filtros existentes, latest sin mediciones y rechaza MPU parcial', async t => {
   const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
@@ -46,5 +46,40 @@ test('Cada vista tiene un único destino activo en la navegación', () => {
   for (const page of ['dashboard','history','node','users'] as const) {
     const html=renderToStaticMarkup(<UserNavigation user={user} page={page} onPage={()=>{}} onLogout={()=>{}} busy={false}/>);
     assert.equal((html.match(/aria-current="page"/g) ?? []).length,1);
+  }
+});
+
+test('Dashboard prioriza semáforo y tarjetas, oculta telemetría cruda y reubica temperatura', () => {
+  const r={...reading,nodeId:'LADERA-1',accelX:0,accelY:-1.25,accelZ:9.81,gyroX:0,gyroY:0.02,gyroZ:-0.03,temperature:0};
+  const html=renderToStaticMarkup(<DashboardView reading={r} nodeId="LADERA-1"/>);
+  for (const text of ['HUMEDAD DEL SUELO','VIBRACIÓN','INCLINACIÓN','Temperatura del MPU6050','°C','Sin recepción reciente','Recepción reciente: menos de 60 segundos','frecuencia de pantalla configurable','Esperando orientación','Aún no hay orientación válida asociada a esta medición']) assert.ok(html.includes(text),text);
+  assert.match(html,/0\.00 °C/);
+  assert.doesNotMatch(html,/Telemetría MPU6050|Aceleración \(m\/s²\)|Giroscopio \(rad\/s\)/);
+  const signal=html.indexOf('SEMÁFORO EXPERIMENTAL'), cards=html.indexOf('class="cards"'), details=html.indexOf('Inclinación relativa'), temperature=html.indexOf('Temperatura del MPU6050'), reception=html.indexOf('RECEPCIÓN DEL NODO');
+  assert.ok(signal>=0 && signal<cards && cards<details && details<temperature && temperature<reception);
+  assert.doesNotMatch(html.slice(cards,details),/Temperatura|MPU6050/);
+  assert.match(html,/no representa la temperatura del suelo ni del ambiente/);
+  assert.doesNotMatch(html,/En línea|Conectado|deltaRoll|baselineRoll|sin calibrar|unidades.*pendientes/);
+  assert.match(html,/datetime="2026-10-05T12:00:00Z"/i);
+  assert.doesNotMatch(renderToStaticMarkup(<DashboardView reading={reading} nodeId="PRUEBA"/>),/La calibración inicial se realizó/);
+});
+
+test('Semáforo propone cuatro niveles inactivos incluso con vibración y extremos RAW', () => {
+  const html=renderToStaticMarkup(<DashboardView reading={{...reading,soilMoistureRaw:4095,vibrationDetected:true}} nodeId="PRUEBA"/>);
+  for (const text of ['NORMAL','PRECAUCIÓN','ALERTA','CRÍTICO','Pendiente de configuración','Riesgo global: no evaluado','no modifican este semáforo']) assert.ok(html.includes(text),text);
+  assert.equal((html.match(/data-active="false"/g)??[]).length,4);
+  assert.doesNotMatch(html,/data-active="true"/);
+});
+
+test('Temperatura ausente y lecturas antiguas conservan ausencia sin simular conexión', () => {
+  for (const r of [null,reading]) {
+    const html=renderToStaticMarkup(<DashboardView reading={r} nodeId="PRUEBA"/>);
+    assert.ok(html.includes('Sin lectura'));
+    assert.doesNotMatch(html,/Sin lectura<small> °C|En línea|Desconectado/);
+    const status=renderToStaticMarkup(<NodeStatusView reading={r}/>);
+    assert.match(status,/Estado de recepción/);
+    assert.ok(status.includes(r ? 'Sin recepción reciente' : 'Sin datos'));
+    assert.doesNotMatch(status,/Diagnósticos avanzados|No se ha definido un intervalo/);
+    assert.match(status,/Sin orientación disponible/);
   }
 });

@@ -12,19 +12,24 @@ test('Reset local de contraseña', async t => {
   const oldPassword = randomBytes(18).toString('base64url');
   const newPassword = randomBytes(18).toString('base64url');
   const oldHash = await hashPassword(oldPassword);
-  const user = { email: 'test@example.invalid', role: 'ADMINISTRADOR', name: 'Prueba', active: true, passwordHash: oldHash };
+  const user = { email: 'test@example.invalid', role: 'ADMINISTRADOR', name: 'Prueba', active: true, passwordHash: oldHash, credentialVersion: 0 };
   let calls = 0;
-  postgres.getPool = () => ({ query: async (sql, params) => {
+  const statements = [];
+  postgres.getPool = () => ({ connect: async () => ({ release: () => {}, query: async (sql, params) => {
     calls++;
-    assert.equal(sql, 'UPDATE users SET password_hash=$1 WHERE email=$2');
+    statements.push(sql);
+    if (!sql.startsWith('UPDATE')) return { rows: [] };
+    assert.equal(sql, 'UPDATE users SET password_hash=$1, credential_version=credential_version+1 WHERE email=$2 AND deleted_at IS NULL RETURNING id');
     assert.equal(params.length, 2);
-    if (params[1] !== user.email) return { rowCount: 0 };
-    user.passwordHash = params[0]; return { rowCount: 1 };
-  } });
+    if (params[1] !== user.email) return { rows: [] };
+    user.passwordHash = params[0]; user.credentialVersion++; return { rows: [{ id: 7 }] };
+  } }) });
   await t.test('usuario existente, email normalizado y otros campos intactos', async () => {
     assert.equal(await resetPassword(' TEST@example.invalid ', newPassword), true);
     assert.equal(user.email, 'test@example.invalid'); assert.equal(user.role, 'ADMINISTRADOR');
     assert.equal(user.name, 'Prueba'); assert.equal(user.active, true);
+    assert.equal(user.credentialVersion,1);
+    assert.deepEqual(statements.slice(-2),['DELETE FROM password_reset_tokens WHERE user_id=$1','COMMIT']);
   });
   await t.test('usuario inexistente no modifica ningún hash', async () => {
     const hash = user.passwordHash;

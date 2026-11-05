@@ -1,32 +1,50 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { getNodes, getLatest, getHistory } from './api/telemetry';
-import type { Node, Reading } from './types/telemetry';
+import { getHistory, getDailyHistory } from './api/telemetry';
+import { startLatestPolling } from './api/pollLatest';
+import { LATEST_REFRESH_MS, SCREEN_REFRESH_OPTIONS } from './reception';
+import type { Reading } from './types/telemetry';
 import { formatTimestamp, type TelemetryPage } from './presentation';
 import { DashboardView, HistoryView, NodeStatusView } from './components/TelemetryViews';
 type Status = 'loading' | 'ready' | 'error';
+const nodeId = 'LADERA-1';
 export default function App({ page = 'dashboard' }: { page?: TelemetryPage }) {
-  const [nodes,setNodes] = useState<Node[]>([]), [nodeId,setNodeId] = useState('');
-  const [nodesStatus,setNodesStatus] = useState<Status>('loading'), [dataStatus,setDataStatus] = useState<Status>('loading');
+  const [dataStatus,setDataStatus] = useState<Status>('loading');
+  const [refreshInterval,setRefreshInterval] = useState<number>(LATEST_REFRESH_MS);
   const [latest,setLatest] = useState<Reading | null>(null), [history,setHistory] = useState<Reading[]>([]);
-  const [retry,setRetry] = useState(0), [refresh,setRefresh] = useState(0), [queriedAt,setQueriedAt] = useState<string | null>(null);
+  const [dailyHistory,setDailyHistory] = useState<Reading[]>([]);
+  const [now,setNow] = useState(Date.now), [autoRefreshFailed,setAutoRefreshFailed] = useState(false);
+  useEffect(() => {
+    if (page === 'history') return;
+    const tick = () => setNow(Date.now());
+    tick();
+    const interval = setInterval(tick,1000);
+    document.addEventListener('visibilitychange',tick);
+    window.addEventListener('focus',tick);
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange',tick); window.removeEventListener('focus',tick); };
+  },[page]);
+  const [refresh,setRefresh] = useState(0), [queriedAt,setQueriedAt] = useState<string | null>(null);
   const [limit,setLimit] = useState('50'), [from,setFrom] = useState(''), [to,setTo] = useState(''), [filterError,setFilterError] = useState('');
   const [filters,setFilters] = useState<{limit:number;from?:string;to?:string}>({limit:50});
   useEffect(() => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => { controller.abort(); setNodesStatus('error'); },15000);
-    setNodesStatus('loading');
-    getNodes(controller.signal).then(items => { if (!controller.signal.aborted) { setNodes(items); setNodeId(current => items.some(n => n.nodeId === current) ? current : items[0]?.nodeId ?? ''); setNodesStatus('ready'); } }).catch(() => { if (!controller.signal.aborted) setNodesStatus('error'); }).finally(() => clearTimeout(timeout));
-    return () => { clearTimeout(timeout); controller.abort(); };
-  },[retry]);
-  useEffect(() => {
-    if (!nodeId || nodesStatus !== 'ready') return;
+    setLatest(null); setHistory([]); setDailyHistory([]); setQueriedAt(null); setDataStatus('loading'); setAutoRefreshFailed(false);
+    if (page !== 'history') {
+      let loaded = false;
+      const polling = startLatestPolling(nodeId, {
+        onData: reading => { loaded = true; setLatest(reading); setNow(Date.now()); setQueriedAt(new Date().toISOString()); setDataStatus('ready'); setAutoRefreshFailed(false); },
+        onError: () => { if (loaded) setAutoRefreshFailed(true); else setDataStatus('error'); },
+      }, undefined, refreshInterval);
+      const resume = () => { if (refreshInterval > 0 && document.visibilityState === 'visible') void polling.refresh(); };
+      document.addEventListener('visibilitychange',resume);
+      window.addEventListener('focus',resume);
+      return () => { polling.stop(); document.removeEventListener('visibilitychange',resume); window.removeEventListener('focus',resume); };
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => { controller.abort(); setDataStatus('error'); },15000);
-    setLatest(null); setHistory([]); setQueriedAt(null); setDataStatus('loading');
-    const request = page === 'history' ? getHistory(nodeId,controller.signal,filters).then(readings => { if (!controller.signal.aborted) setHistory(readings); }) : getLatest(nodeId,controller.signal).then(reading => { if (!controller.signal.aborted) setLatest(reading); });
-    request.then(() => { if (!controller.signal.aborted) { setQueriedAt(new Date().toISOString()); setDataStatus('ready'); } }).catch(() => { if (!controller.signal.aborted) setDataStatus('error'); }).finally(() => clearTimeout(timeout));
+    Promise.all([getHistory(nodeId,controller.signal,filters), getDailyHistory(nodeId,controller.signal,filters)]).then(([readings,daily]) => {
+      if (!controller.signal.aborted) { setHistory(readings); setDailyHistory(daily); setQueriedAt(new Date().toISOString()); setDataStatus('ready'); }
+    }).catch(() => { if (!controller.signal.aborted) setDataStatus('error'); }).finally(() => clearTimeout(timeout));
     return () => { clearTimeout(timeout); controller.abort(); };
-  },[nodeId,nodesStatus,page,refresh,filters]);
+  },[page,refresh,filters,refreshInterval]);
   function applyFilters(event: FormEvent) {
     event.preventDefault();
     const count = Number(limit);
@@ -34,11 +52,19 @@ export default function App({ page = 'dashboard' }: { page?: TelemetryPage }) {
     setFilterError(''); setFilters({limit:count,from:from ? new Date(from).toISOString() : undefined,to:to ? new Date(to).toISOString() : undefined});
   }
   const title = {dashboard:'Dashboard',history:'Historial',node:'Estado del nodo'}[page];
-  return <main><div className="page-heading"><h2>{title}</h2><p>{page === 'dashboard' ? 'Resumen de la última medición recibida.' : page === 'history' ? 'Consulta las mediciones originales por nodo e intervalo.' : 'Disponibilidad técnica de datos, separada del riesgo.'}</p></div>
-    <section className="toolbar" aria-label="Selección y consulta"><div><label htmlFor="node">Nodo seleccionado</label><select id="node" value={nodeId} disabled={nodesStatus !== 'ready' || !nodes.length} onChange={event => { setDataStatus('loading'); setNodeId(event.target.value); }}>{!nodes.length && <option value="">{nodesStatus === 'loading' ? 'Cargando nodos…' : 'Sin nodos disponibles'}</option>}{nodes.map(node => <option key={node.nodeId}>{node.nodeId}</option>)}</select></div><div className="query-info">{queriedAt ? <>Consulta realizada<br/><strong>{formatTimestamp(queriedAt)}</strong></> : 'Consulta de datos del backend'}</div><button disabled={nodesStatus === 'loading' || (!!nodeId && nodesStatus === 'ready' && dataStatus === 'loading')} onClick={() => nodesStatus === 'error' || !nodes.length ? setRetry(v => v + 1) : setRefresh(v => v + 1)}>Actualizar datos</button></section>
-    {page === 'history' && <form className="history-filters panel" onSubmit={applyFilters}><div><label htmlFor="limit">Límite (1–100)</label><input id="limit" type="number" min="1" max="100" required value={limit} onChange={event => setLimit(event.target.value)}/></div><div><label htmlFor="from">Desde (incluido, hora local)</label><input id="from" type="datetime-local" step="1" value={from} onChange={event => setFrom(event.target.value)}/></div><div><label htmlFor="to">Hasta (excluido, hora local)</label><input id="to" type="datetime-local" step="1" value={to} onChange={event => setTo(event.target.value)}/></div><button disabled={!nodeId || nodesStatus !== 'ready'}>Consultar historial</button>{filterError && <p className="error notice" role="alert">{filterError}</p>}</form>}
-    {nodesStatus === 'loading' && <p className="notice" role="status">Cargando catálogo de nodos…</p>}{nodesStatus === 'error' && <p className="notice error" role="alert">No se pudo consultar el catálogo. Verifica el backend y pulsa Actualizar datos.</p>}{nodesStatus === 'ready' && !nodes.length && <p className="notice" role="status">No hay nodos registrados en el backend.</p>}
-    {nodesStatus === 'ready' && nodeId && <div aria-busy={dataStatus === 'loading'}>{dataStatus === 'loading' && <p className="notice" role="status">Cargando mediciones de {nodeId}…</p>}{dataStatus === 'error' && <p className="notice error" role="alert">No se pudieron cargar las mediciones. Verifica la conexión y pulsa Actualizar datos.</p>}{dataStatus === 'ready' && (page === 'history' ? <HistoryView readings={history}/> : <>{!latest && <p className="notice" role="status">Este nodo todavía no tiene mediciones disponibles.</p>}{page === 'node' ? <NodeStatusView reading={latest}/> : <DashboardView reading={latest} nodeId={nodeId}/>}</>)}</div>}
-    <footer>LANDSIS LADERA-1 · Beta académica<span>Sin evaluación de riesgo ni cálculo de inclinación.</span></footer></main>;
+  return <main><div className="page-heading page-heading-with-actions">
+      <div><h2>{title}</h2><p>{page === 'dashboard' ? 'Resumen de la última medición recibida.' : page === 'history' ? 'Una medición diaria y el historial detallado de LADERA-1 por intervalo.' : 'Disponibilidad técnica de datos, separada del riesgo.'}</p></div>
+      <div className="refresh-controls">
+        {page !== 'history' && <div className="refresh-choice"><label htmlFor="screen-refresh">Actualización de pantalla</label><select id="screen-refresh" value={refreshInterval} onChange={event => { const value=Number(event.target.value); if (SCREEN_REFRESH_OPTIONS.some(option => option.ms === value)) setRefreshInterval(value); }}>{SCREEN_REFRESH_OPTIONS.map(option => <option key={option.ms} value={option.ms}>{option.label}</option>)}</select></div>}
+        <button disabled={dataStatus === 'loading'} onClick={() => setRefresh(v => v + 1)}>Actualizar ahora</button>
+        <small className="refresh-meta">{queriedAt ? <>Última consulta: {formatTimestamp(queriedAt)}</> : 'Consultando LADERA-1'}{page !== 'history' && <> · Solo cambia la pantalla; el nodo sigue enviando cada 10 segundos.</>}</small>
+        {page !== 'history' && (refreshInterval === 0 || refreshInterval > 60000) && <small className="refresh-meta">El semáforo queda gris si la lectura en pantalla cumple 60 segundos. Puedes usar Actualizar ahora.</small>}
+      </div>
+    </div>
+    {page === 'history' && <form className="history-filters panel" onSubmit={applyFilters}><div><label htmlFor="limit">Límite por listado (1–100)</label><input id="limit" type="number" min="1" max="100" required value={limit} onChange={event => setLimit(event.target.value)}/></div><div><label htmlFor="from">Desde (incluido, hora local)</label><input id="from" type="datetime-local" step="1" value={from} onChange={event => setFrom(event.target.value)}/></div><div><label htmlFor="to">Hasta (excluido, hora local)</label><input id="to" type="datetime-local" step="1" value={to} onChange={event => setTo(event.target.value)}/></div><button disabled={dataStatus === 'loading'}>Consultar historial</button>{filterError && <p className="error notice" role="alert">{filterError}</p>}</form>}
+    {autoRefreshFailed && page !== 'history' && <p className="notice" role="status">No se pudo actualizar automáticamente. Se conserva la última recepción disponible.</p>}
+    <div aria-busy={dataStatus === 'loading'}>{dataStatus === 'loading' && <p className="notice" role="status">Cargando mediciones de {nodeId}…</p>}{dataStatus === 'error' && <p className="notice error" role="alert">No se pudieron cargar las mediciones. Verifica la conexión y pulsa Actualizar ahora.</p>}{dataStatus === 'ready' && (page === 'history' ? <HistoryView readings={history} dailyReadings={dailyHistory}/> : <>{!latest && <p className="notice" role="status">LADERA-1 todavía no tiene mediciones disponibles.</p>}{page === 'node' ? <NodeStatusView reading={latest} now={now}/> : <DashboardView reading={latest} nodeId={nodeId} now={now} queriedAt={queriedAt}/>}</>)}</div>
+    {page === 'history' && <p className="caption">El límite aplica a días en el resumen diario y a lecturas en el historial detallado. Ambos listados corresponden a LADERA-1 y al intervalo consultado.</p>}
+    <footer>LANDSIS LADERA-1 · Beta académica<span>Orientación experimental del nodo · riesgo global pendiente.</span></footer></main>;
 }
 
