@@ -42,9 +42,10 @@ $RECYCLE.BIN/
 *.lnk
 
 # Variables de entorno; conservar ejemplos sin secretos
-firmware/landsis_ladera1/secrets.h
+secrets.h
 .env
 .env.*
+*.env
 !.env.example
 
 # Logs
@@ -53,6 +54,11 @@ logs/
 
 # Respaldos privados de PostgreSQL (pueden contener hashes y datos reales)
 /private-backups/
+*.dump
+*.dump.*
+*.backup
+*.backup.*
+*.sql.gz
 
 # Cobertura
 coverage/

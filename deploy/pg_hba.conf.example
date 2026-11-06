@@ -1,0 +1,8 @@
+# Reglas previstas para VPS NUEVO; revisar orden y acceso administrativo.
+# No reemplazar a ciegas pg_hba.conf de una instalación existente.
+local   all       postgres                         peer
+local   all       all                              peer
+host    landsis   landsis_app  127.0.0.1/32         scram-sha-256
+host    landsis   landsis_app  ::1/128              scram-sha-256
+host    all       all          0.0.0.0/0            reject
+host    all       all          ::/0                 reject

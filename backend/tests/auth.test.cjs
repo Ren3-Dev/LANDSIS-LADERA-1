@@ -7,6 +7,8 @@ const { Sessions } = require('../dist/auth/sessions.js');
 const { hashPassword, verifyPassword, validPassword } = require('../dist/auth/password.js');
 const { UserConflict, LastAdmin } = require('../dist/data/users.js');
 const { randomBytes } = require('node:crypto');
+const { createDeviceAuth } = require('../dist/auth/device.js');
+const deviceToken = randomBytes(32).toString('hex');
 
 // Datos exclusivamente sintéticos: nunca crean usuarios en PostgreSQL.
 const password = randomBytes(18).toString('base64url');
@@ -50,7 +52,7 @@ test('Auth y roles por HTTP', async t => {
   };
   let saved=0;
   const sessions=new Sessions();
-  const server=createApp(async reading=>{saved++;return {id:99,...reading};},async()=>[],async()=>[{nodeId:'LADERA-1'}],createSecurity(store,sessions)).listen(0,'127.0.0.1');
+  const server=createApp(async reading=>{saved++;return {id:99,...reading};},async()=>[],async()=>[{nodeId:'LADERA-1'}],createSecurity(store,sessions),undefined,undefined,createDeviceAuth({IOT_NODE_ID:'LADERA-1',IOT_DEVICE_TOKEN:deviceToken})).listen(0,'127.0.0.1');
   await once(server,'listening'); t.after(()=>{server.closeAllConnections();return new Promise(r=>server.close(r));});
   const base=`http://127.0.0.1:${server.address().port}/api/v1`;
   const request=(path,method='GET',body,token)=>fetch(base+path,{method,headers:{...(body!==undefined?{'Content-Type':'application/json','X-Landsis-Request':'1'}:{}),...(token?{Cookie:`landsis_session=${token}`}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})});
@@ -119,8 +121,9 @@ test('Auth y roles por HTTP', async t => {
     const response=await fetch(base+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:users[0].email,password})});assert.equal(response.status,403);
     const malformed=await fetch(base+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json','X-Landsis-Request':'1'},body:'{'});assert.equal(malformed.status,400);assert.equal((await malformed.text()).includes('SyntaxError'),false);
   });
-  await t.test('POST readings sin auth humana sigue compatible',async()=>{
-    assert.equal((await request('/readings','POST',{nodeId:'LADERA-1',soilMoistureRaw:4095,vibrationDetected:false})).status,201);assert.equal(saved,1);
+  await t.test('POST readings con token de nodo y sin auth humana',async()=>{
+    const response=await fetch(base+'/readings',{method:'POST',headers:{'Content-Type':'application/json','X-Landsis-Device-Token':deviceToken},body:JSON.stringify({nodeId:'LADERA-1',soilMoistureRaw:4095,vibrationDetected:false})});
+    assert.equal(response.status,201);assert.equal(saved,1);
   });
   await t.test('logout revoca sesión y elimina cookie',async()=>{
     const response=await request('/auth/logout','POST',{},adminToken);assert.equal(response.status,204);assert.match(response.headers.get('set-cookie'),/Expires=Thu, 01 Jan 1970/);

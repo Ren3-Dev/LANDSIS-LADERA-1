@@ -1,0 +1,21 @@
+[Unit]
+Description=LANDSIS LADERA-1 API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=landsis
+Group=landsis
+WorkingDirectory=/srv/landsis/current/backend
+EnvironmentFile=/etc/landsis/backend.env
+ExecStart=/usr/bin/node /srv/landsis/current/backend/dist/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

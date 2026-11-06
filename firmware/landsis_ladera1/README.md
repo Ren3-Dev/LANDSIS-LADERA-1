@@ -1,4 +1,11 @@
-# Prueba ESP32 → WiFi → HTTP → PostgreSQL
+# Prueba ESP32 → WiFi → HTTPS → PostgreSQL
+
+**Actualización de seguridad (2026-11-05):** el sketch requiere HTTPS, CA raíz,
+sincronización SNTP y token de dispositivo. Las instrucciones HTTP y pruebas
+históricas que siguen describen versiones anteriores. Antes de compilar, actualizar
+manualmente el `secrets.h` privado con los campos de `secrets.example.h` y consultar
+[la configuración y pruebas TLS pendientes](../../docs/seguridad-despliegue-produccion.md).
+No se cargó esta versión al ESP32 ni se validó físicamente TLS todavía.
 
 Este sketch se deriva de `../Nodo_Ladera_1_v1.ino`, conservado como línea base. Abrir únicamente `landsis_ladera1.ino` para la prueba HTTP. No juntar ambos sketches en una misma carpeta de Arduino.
 

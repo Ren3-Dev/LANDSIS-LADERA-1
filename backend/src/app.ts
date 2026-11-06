@@ -1,4 +1,5 @@
-import express from 'express';
+import express, { type RequestHandler } from 'express';
+import { createDeviceAuth } from './auth/device.js';
 import { createReadingsRouter } from './routes/readings.js';
 import { insertReading, listReadings, listDailyReadings } from './data/readings.js';
 import type { SaveReading, ListReadings } from './data/readings.js';
@@ -15,13 +16,16 @@ export function createApp(
   security: Security = createSecurity(),
   loadDailyReadings: ListReadings = listDailyReadings,
   observe?: CommittedReadingObserver,
+  deviceAuth: RequestHandler = createDeviceAuth(),
 ) {
   const app = express();
+  app.set('trust proxy', ['127.0.0.1/32', '::1/128']);
 
   app.use('/api/v1/auth', security.authRouter);
   app.use('/api/v1/users', security.usersRouter);
   app.use('/api/v1/readings', (req, res, next) => {
     if (req.method === 'GET' || req.method === 'HEAD') security.requireAuth(req, res, next);
+    else if (req.method === 'POST') deviceAuth(req, res, next);
     else next();
   }, createReadingsRouter(saveReading, loadReadings, loadDailyReadings, observe));
   app.use('/api/v1/nodes', security.requireAuth, createNodesRouter(loadNodes));

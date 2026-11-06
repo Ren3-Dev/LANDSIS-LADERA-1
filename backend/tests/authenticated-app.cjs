@@ -8,5 +8,6 @@ exports.createApp = (save, readings, nodes, daily) => {
     res.locals.user = { id: 1, name: 'Prueba', email: 'test@example.invalid', role: 'INVESTIGADOR', active: true };
     next();
   };
-  return createApp(save, readings, nodes, security, daily);
+  // Estos casos prueban telemetría; la autenticación real tiene suite propia.
+  return createApp(save, readings, nodes, security, daily, undefined, (_req, _res, next) => next());
 };

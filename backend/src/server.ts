@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { deviceConfig } from './auth/device.js';
 import { createApp } from './app.js';
 import { createSecurity } from './auth/security.js';
 import { loadRecoveryConfig } from './config/recovery.js';
@@ -12,7 +13,11 @@ import type { CommittedReadingObserver } from './alerts/types.js';
 
 const port = Number(process.env.PORT ?? 3000);
 // Opcional por proceso: permite aislar pruebas sin cambiar el despliegue habitual.
-const host = process.env.LANDSIS_HOST?.trim();
+const host = process.env.LANDSIS_HOST?.trim() || '127.0.0.1';
+if (!deviceConfig()) throw new Error('Configura IOT_NODE_ID e IOT_DEVICE_TOKEN antes de iniciar.');
+if (process.env.NODE_ENV === 'production' && host !== '127.0.0.1' && host !== '::1') {
+  throw new Error('En producción LANDSIS_HOST debe ser loopback.');
+}
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT debe ser un número entero entre 1 y 65535.');

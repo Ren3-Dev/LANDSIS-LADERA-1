@@ -2,6 +2,10 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <time.h>
+#include <esp_sntp.h>
+#include <atomic>
 #include <math.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -37,9 +41,15 @@ struct ResultadoEnvio {
 
 QueueHandle_t colaLecturas = nullptr;
 QueueHandle_t colaResultados = nullptr;
+// Solo habilitar TLS después de una sincronización SNTP, sin bloquear sensores.
+std::atomic<bool> relojSincronizado{false};
+void relojActualizado(struct timeval*) {
+  relojSincronizado.store(true, std::memory_order_relaxed);
+}
 
 void tareaComunicacion(void*) {
   WiFi.mode(WIFI_STA);
+  sntp_set_time_sync_notification_cb(relojActualizado);
   WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("WiFi: conexión iniciada; sensores continúan.");
@@ -51,6 +61,11 @@ void tareaComunicacion(void*) {
     bool conectado = WiFi.status() == WL_CONNECTED;
     if (conectado && !estabaConectado) {
       Serial.println(huboConexion ? "WiFi: recuperado." : "WiFi: conectado.");
+      // No iniciar DNS/SNTP sin red. Si nunca sincronizó, reintentar al
+      // recuperar WiFi; una vez sincronizado, SNTP mantiene su ciclo normal.
+      if (!relojSincronizado.load(std::memory_order_relaxed)) {
+        configTime(0, 0, NTP_SERVER);
+      }
       huboConexion = true;
       ultimoIntento = millis();
     } else if (!conectado && estabaConectado) {
@@ -74,6 +89,10 @@ void tareaComunicacion(void*) {
     ResultadoEnvio resultado = {false, lectura.generacion};
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("HTTP omitido: WiFi no disponible; se conserva vibración.");
+    } else if (!relojSincronizado.load(std::memory_order_relaxed)) {
+      Serial.println("HTTPS omitido: esperando sincronización del reloj.");
+    } else if (strncmp(API_URL, "https://", 8) != 0 || strlen(API_ROOT_CA) == 0 || strlen(IOT_DEVICE_TOKEN) != 64) {
+      Serial.println("HTTPS omitido: configuración TLS o credenciales pendiente.");
     } else {
       char orientacionJson[512];
       const auto& o = lectura.orientacion;
@@ -103,15 +122,19 @@ void tareaComunicacion(void*) {
           longitud <= 0 || static_cast<size_t>(longitud) >= sizeof(json)) {
         Serial.println("HTTP omitido: JSON excede el buffer.");
       } else {
-        WiFiClient cliente;
+        WiFiClientSecure cliente;
+        cliente.setCACert(API_ROOT_CA);
+        cliente.setHandshakeTimeout(10);
         HTTPClient http;
         http.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
         http.setTimeout(HTTP_READ_TIMEOUT_MS);
         http.setReuse(false);
+        http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
         if (!http.begin(cliente, API_URL)) {
           Serial.println("HTTP: no se pudo iniciar; revisar URL local.");
         } else {
           http.addHeader("Content-Type", "application/json");
+          http.addHeader("X-Landsis-Device-Token", IOT_DEVICE_TOKEN);
           Serial.println("HTTP: enviando medición multisensor.");
           unsigned long inicioSolicitud = millis();
           int codigo = http.POST(reinterpret_cast<uint8_t*>(json), longitud);

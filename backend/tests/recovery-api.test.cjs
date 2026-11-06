@@ -132,11 +132,12 @@ test('Límite por cuenta normalizada es silencioso para existentes e inexistente
   await waitFor(() => f.sent.length === 4);
 });
 
-test('Límite IP independiente de cuenta y sin confiar X-Forwarded-For', async t => {
+test('Límite IP independiente de cuenta con IP enviada por proxy loopback', async t => {
   const f = await fixture(t, { users: { findByEmail: async () => null } });
-  for (let i = 0; i < 5; i++) assert.equal((await f.request('forgot-password', { email: `missing${i}@example.invalid` })).status, 202);
+  for (let i = 0; i < 5; i++) assert.equal((await f.request('forgot-password', { email: `missing${i}@example.invalid` }, { 'X-Forwarded-For': '192.0.2.9' })).status, 202);
   const response = await f.request('forgot-password', { email: user.email }, { 'X-Forwarded-For': '192.0.2.9' });
   assert.equal(response.status, 429); assert.equal(response.headers.get('retry-after'), '900');
+  assert.equal((await f.request('forgot-password', { email: user.email }, { 'X-Forwarded-For': '192.0.2.10' })).status, 202);
 });
 
 test('Limitador acota memoria y recupera capacidad al vencer ventana', () => {

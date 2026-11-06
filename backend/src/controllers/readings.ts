@@ -17,6 +17,9 @@ export function createAcceptReading(saveReading: SaveReading, orientations?: Lat
       return;
     }
 
+    if (res.locals?.deviceNodeId && body.nodeId !== res.locals.deviceNodeId) {
+      res.status(403).json({ message: 'Dispositivo no autorizado para este nodo.' }); return;
+    }
     try {
       const { orientation, ...measurement } = body;
       const reading = await saveReading(measurement);
