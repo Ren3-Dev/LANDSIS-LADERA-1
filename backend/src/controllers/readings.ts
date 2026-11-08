@@ -70,7 +70,10 @@ export function createLatestReading(loadReadings: ListReadings, orientations?: L
         return;
       }
       const orientation = orientations?.forReading(reading);
-      res.status(200).json({ reading: orientation ? { ...reading, orientation } : reading });
+      res.set('Cache-Control', 'no-store').status(200).json({
+        reading: orientation ? { ...reading, orientation } : reading,
+        serverTime: Date.now(),
+      });
     } catch {
       res.status(500).json({ status: 'error', message: 'No se pudieron consultar las mediciones.' });
     }

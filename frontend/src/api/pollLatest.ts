@@ -1,9 +1,8 @@
-import { getLatest } from './telemetry';
-import type { Reading } from '../types/telemetry';
+import { getLatest, type LatestReading } from './telemetry';
 import { LATEST_REFRESH_MS } from '../reception';
 
 export function startLatestPolling(nodeId: string, callbacks: {
-  onData: (reading: Reading | null) => void; onError: () => void;
+  onData: (reading: LatestReading | null) => void; onError: () => void;
 }, read = getLatest, intervalMs = LATEST_REFRESH_MS) {
   let stopped = false;
   let inFlight: AbortController | null = null;

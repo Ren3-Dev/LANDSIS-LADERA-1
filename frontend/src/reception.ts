@@ -8,6 +8,11 @@ export const SCREEN_REFRESH_OPTIONS = [
   {ms:3600000,label:'1 hora'}, {ms:0,label:'Solo manual'},
 ] as const;
 export type ReceptionState = 'fresh' | 'stale' | 'missing' | 'invalid';
+export function receptionNow(receivedAt: string, serverTime: number, requestedAt: number, tick: number): number {
+  if (Date.parse(receivedAt) > serverTime) return NaN;
+  // Contar toda la consulta evita extender la vigencia por latencia de red.
+  return serverTime + Math.max(0, tick - requestedAt);
+}
 export function receptionState(receivedAt: string | null | undefined, now = Date.now()): ReceptionState {
   if (!receivedAt) return 'missing';
   const timestamp = Date.parse(receivedAt);

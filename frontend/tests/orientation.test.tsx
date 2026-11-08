@@ -38,13 +38,14 @@ test('Tarjeta de inclinación muestra deltas y la temperatura solo queda en el d
 });
 test('Latest acepta orientación validada y legacy; rechaza bloques parciales y no finitos',async t=>{
   const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original});
+  const serverTime=Date.parse(reading.receivedAt)+2500;
   for(const o of [ready,{status:'calibrating'},{status:'unavailable'}]){
-    globalThis.fetch=async()=>Response.json({reading:{...reading,orientation:o}});
-    assert.deepEqual((await getLatest('LADERA-1',new AbortController().signal))?.orientation,o);
+    globalThis.fetch=async()=>Response.json({reading:{...reading,orientation:o},serverTime});
+    assert.deepEqual((await getLatest('LADERA-1',new AbortController().signal))?.reading.orientation,o);
   }
-  globalThis.fetch=async()=>Response.json({reading});assert.equal((await getLatest('LADERA-1',new AbortController().signal))?.orientation,undefined);
+  globalThis.fetch=async()=>Response.json({reading,serverTime});assert.equal((await getLatest('LADERA-1',new AbortController().signal))?.reading.orientation,undefined);
   for(const o of [{status:'ready'},{...ready,deltaRoll:null},{...ready,deltaPitch:'1'},{...ready,criticalCount:7},{...ready,extra:0},null]){
-    globalThis.fetch=async()=>Response.json({reading:{...reading,orientation:o}});
+    globalThis.fetch=async()=>Response.json({reading:{...reading,orientation:o},serverTime});
     await assert.rejects(getLatest('LADERA-1',new AbortController().signal),/Invalid reading/);
   }
 });

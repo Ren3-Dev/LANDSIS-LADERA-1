@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { getHistory, getDailyHistory } from './api/telemetry';
+import { getHistory, getDailyHistory, type LatestReading } from './api/telemetry';
 import { startLatestPolling } from './api/pollLatest';
-import { LATEST_REFRESH_MS, SCREEN_REFRESH_OPTIONS } from './reception';
+import { LATEST_REFRESH_MS, SCREEN_REFRESH_OPTIONS, receptionNow } from './reception';
 import type { Reading } from './types/telemetry';
 import { formatTimestamp, type TelemetryPage } from './presentation';
 import { DashboardView, HistoryView, NodeStatusView } from './components/TelemetryViews';
@@ -10,12 +10,14 @@ const nodeId = 'LADERA-1';
 export default function App({ page = 'dashboard' }: { page?: TelemetryPage }) {
   const [dataStatus,setDataStatus] = useState<Status>('loading');
   const [refreshInterval,setRefreshInterval] = useState<number>(LATEST_REFRESH_MS);
-  const [latest,setLatest] = useState<Reading | null>(null), [history,setHistory] = useState<Reading[]>([]);
+  const [latestResponse,setLatestResponse] = useState<LatestReading | null>(null), [history,setHistory] = useState<Reading[]>([]);
   const [dailyHistory,setDailyHistory] = useState<Reading[]>([]);
-  const [now,setNow] = useState(Date.now), [autoRefreshFailed,setAutoRefreshFailed] = useState(false);
+  const [clockTick,setClockTick] = useState(() => performance.now()), [autoRefreshFailed,setAutoRefreshFailed] = useState(false);
+  const latest = latestResponse?.reading ?? null;
+  const now = latestResponse ? receptionNow(latestResponse.reading.receivedAt, latestResponse.serverTime, latestResponse.requestedAt, clockTick) : NaN;
   useEffect(() => {
     if (page === 'history') return;
-    const tick = () => setNow(Date.now());
+    const tick = () => setClockTick(performance.now());
     tick();
     const interval = setInterval(tick,1000);
     document.addEventListener('visibilitychange',tick);
@@ -26,11 +28,18 @@ export default function App({ page = 'dashboard' }: { page?: TelemetryPage }) {
   const [limit,setLimit] = useState('50'), [from,setFrom] = useState(''), [to,setTo] = useState(''), [filterError,setFilterError] = useState('');
   const [filters,setFilters] = useState<{limit:number;from?:string;to?:string}>({limit:50});
   useEffect(() => {
-    setLatest(null); setHistory([]); setDailyHistory([]); setQueriedAt(null); setDataStatus('loading'); setAutoRefreshFailed(false);
+    setLatestResponse(null); setHistory([]); setDailyHistory([]); setQueriedAt(null); setDataStatus('loading'); setAutoRefreshFailed(false);
     if (page !== 'history') {
       let loaded = false;
       const polling = startLatestPolling(nodeId, {
-        onData: reading => { loaded = true; setLatest(reading); setNow(Date.now()); setQueriedAt(new Date().toISOString()); setDataStatus('ready'); setAutoRefreshFailed(false); },
+        onData: response => {
+          loaded = true;
+          setLatestResponse(response);
+          setClockTick(performance.now());
+          setQueriedAt(response ? new Date(response.serverTime).toISOString() : new Date().toISOString());
+          setDataStatus('ready');
+          setAutoRefreshFailed(false);
+        },
         onError: () => { if (loaded) setAutoRefreshFailed(true); else setDataStatus('error'); },
       }, undefined, refreshInterval);
       const resume = () => { if (refreshInterval > 0 && document.visibilityState === 'visible') void polling.refresh(); };

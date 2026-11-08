@@ -84,9 +84,13 @@ test('GET de mediciones y última medición', async (t) => {
     });
   }
   await t.test('latest devuelve 200 y consulta una única medición', async () => {
+    const before = Date.now();
     const response = await fetch(`${url}/latest`);
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { reading: readings[0] });
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    const { reading, serverTime } = await response.json();
+    assert.deepEqual(reading, readings[0]);
+    assert.ok(Number.isSafeInteger(serverTime) && serverTime >= before && serverTime <= Date.now());
     assert.equal(limits.at(-1), 1);
   });
   result = [];
@@ -289,7 +293,13 @@ test('Incremento 5: multisensor, validación y consultas compatibles', async (t)
       await t.test(`GET ${path || 'historial'} ${name}`, async () => {
         const response = await fetch(url + path);
         assert.equal(response.status, 200);
-        assert.deepEqual(await response.json(), path ? { reading: expected(values) } : { readings: [expected(values)] });
+        const data = await response.json();
+        if (path) {
+          assert.deepEqual(data.reading, expected(values));
+          assert.ok(Number.isSafeInteger(data.serverTime));
+        } else {
+          assert.deepEqual(data, { readings: [expected(values)] });
+        }
       });
     }
   }

@@ -18,9 +18,8 @@ function isReading(value: unknown): value is Reading {
     && (!Object.hasOwn(r, 'orientation') || (isOrientation(r.orientation) && mpuFields.every(k => typeof r[k] === 'number')))
     && (mpuFields.every(k => r[k] === null) || mpuFields.every(k => typeof r[k] === 'number' && Number.isFinite(r[k])));
 }
-async function request(path: string, signal: AbortSignal, allowEmpty = false): Promise<unknown> {
+async function request(path: string, signal: AbortSignal): Promise<unknown> {
   const response = await apiRequest(path, { signal });
-  if (allowEmpty && response.status === 404) return null;
   if (!response.ok) throw new Error('API unavailable');
   return response.json();
 }
@@ -29,11 +28,21 @@ export async function getNodes(signal: AbortSignal): Promise<Node[]> {
   if (!object(data) || !Array.isArray(data.nodes) || !data.nodes.every(isNode)) throw new Error('Invalid nodes');
   return data.nodes;
 }
-export async function getLatest(nodeId: string, signal: AbortSignal): Promise<Reading | null> {
-  const data = await request(`readings/latest?${new URLSearchParams({ nodeId })}`, signal, true);
-  if (data === null) return null;
+export interface LatestReading {
+  reading: Reading;
+  serverTime: number;
+  requestedAt: number;
+}
+export async function getLatest(nodeId: string, signal: AbortSignal): Promise<LatestReading | null> {
+  const requestedAt = performance.now();
+  const response = await apiRequest(`readings/latest?${new URLSearchParams({ nodeId })}`, { signal, cache: 'no-store' });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error('API unavailable');
+  const data: unknown = await response.json();
   if (!object(data) || !isReading(data.reading) || data.reading.nodeId !== nodeId) throw new Error('Invalid reading');
-  return data.reading;
+  const serverTime = data.serverTime;
+  if (typeof serverTime !== 'number' || !Number.isFinite(new Date(serverTime).getTime())) throw new Error('Invalid server time');
+  return { reading: data.reading, serverTime, requestedAt };
 }
 async function loadHistory(path: string, nodeId: string, signal: AbortSignal, filters: { limit: number; from?: string; to?: string }): Promise<Reading[]> {
   const query = new URLSearchParams({ nodeId, limit: String(filters.limit) });
