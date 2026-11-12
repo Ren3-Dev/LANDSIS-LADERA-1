@@ -1,0 +1,5 @@
+Fecha Guatemala: 2026-11-09T04:25:39.8674190-06:00
+Directorio: C:\Users\Augus\Documents\LANDSIS-LADERA-1
+Comando: ./backend/node_modules/.bin/tsc.cmd '--project' 'backend/tsconfig.json' '--outDir' 'C:\Users\Augus\Documents\LANDSIS-LADERA-1\docs\evidencias-pruebas-tesis-2026-11-09\backend-temporal/dist'
+
+Codigo de salida: 0

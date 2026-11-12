@@ -1,0 +1,93 @@
+Fecha Guatemala: 2026-11-09T04:25:45.8854750-06:00
+Directorio: C:\Users\Augus\Documents\LANDSIS-LADERA-1\docs\evidencias-pruebas-tesis-2026-11-09\backend-temporal
+Comando: node '--test' '--test-reporter=tap' '--test-name-pattern' '^(Hash scrypt|Sesiones expiran|Consulta diaria agrupa|Fechas: calendario|SQL parametrizado y orden|POST transaccional|Orientación opcional|Caché acotada|SELECT parametrizado|Acceso a datos: INSERT|Config FRONTEND_URL|Limitador acota|Cola limita)' 'tests/auth.test.cjs' 'tests/daily-readings.test.cjs' 'tests/nodes.test.cjs' 'tests/orientation.test.cjs' 'tests/readings.test.cjs' 'tests/recovery-api.test.cjs'
+
+TAP version 13
+# Subtest: Hash scrypt, sal aleatoria y política
+ok 1 - Hash scrypt, sal aleatoria y política
+  ---
+  duration_ms: 1867.3218
+  type: 'test'
+  ...
+# Subtest: Sesiones expiran, son opacas y se revocan
+ok 2 - Sesiones expiran, son opacas y se revocan
+  ---
+  duration_ms: 1.5308
+  type: 'test'
+  ...
+# Subtest: Consulta diaria agrupa antes del límite, usa Guatemala y desempata por ID con filtros parametrizados
+ok 3 - Consulta diaria agrupa antes del límite, usa Guatemala y desempata por ID con filtros parametrizados
+  ---
+  duration_ms: 6.9658
+  type: 'test'
+  ...
+# Subtest: Fechas: calendario, zona y precisión explícitos
+ok 4 - Fechas: calendario, zona y precisión explícitos
+  ---
+  duration_ms: 5.3334
+  type: 'test'
+  ...
+# Subtest: SQL parametrizado y orden estable del catálogo
+ok 5 - SQL parametrizado y orden estable del catálogo
+  ---
+  duration_ms: 5.7735
+  type: 'test'
+  ...
+# Subtest: POST transaccional: registro, commit y rollback
+ok 6 - POST transaccional: registro, commit y rollback
+  ---
+  duration_ms: 3.0657
+  type: 'test'
+  ...
+# Subtest: Orientación opcional estricta, ceros válidos, estados de arranque y legacy
+ok 7 - Orientación opcional estricta, ceros válidos, estados de arranque y legacy
+  ---
+  duration_ms: 8.2888
+  type: 'test'
+  ...
+# Subtest: Caché acotada separa IDs/nodos, soporta commits fuera de orden y reinicio
+ok 8 - Caché acotada separa IDs/nodos, soporta commits fuera de orden y reinicio
+  ---
+  duration_ms: 2.6989
+  type: 'test'
+  ...
+# Subtest: SELECT parametrizado: orden descendente, límite y transformación compartida
+ok 9 - SELECT parametrizado: orden descendente, límite y transformación compartida
+  ---
+  duration_ms: 7.9163
+  type: 'test'
+  ...
+# Subtest: Acceso a datos: INSERT parametrizado y valores generados por PostgreSQL
+ok 10 - Acceso a datos: INSERT parametrizado y valores generados por PostgreSQL
+  ---
+  duration_ms: 2.3225
+  type: 'test'
+  ...
+# Subtest: Config FRONTEND_URL: explícita, segura, sin secretos ni origen derivado de HTTP
+ok 11 - Config FRONTEND_URL: explícita, segura, sin secretos ni origen derivado de HTTP
+  ---
+  duration_ms: 4.9571
+  type: 'test'
+  ...
+# Subtest: Limitador acota memoria y recupera capacidad al vencer ventana
+ok 12 - Limitador acota memoria y recupera capacidad al vencer ventana
+  ---
+  duration_ms: 22.9254
+  type: 'test'
+  ...
+# Subtest: Cola limita concurrencia a dos y capacidad a veinte, también ante errores
+ok 13 - Cola limita concurrencia a dos y capacidad a veinte, también ante errores
+  ---
+  duration_ms: 9.9702
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3077.8551
+Codigo de salida: 0

@@ -1,0 +1,227 @@
+Fecha Guatemala: 2026-11-09T04:25:41.7841175-06:00
+Directorio: C:\Users\Augus\Documents\LANDSIS-LADERA-1\docs\evidencias-pruebas-tesis-2026-11-09\backend-temporal
+Comando: node '--test' '--test-reporter=tap' 'tests/check-smtp.test.cjs' 'tests/inclination-alert.test.cjs' 'tests/mail.test.cjs' 'tests/password-recovery.test.cjs' 'tests/reset-password.test.cjs' 'tests/users-store.test.cjs'
+
+TAP version 13
+# Subtest: Comprobación Gmail valida sin crear transporte ni conectar por defecto
+ok 1 - Comprobación Gmail valida sin crear transporte ni conectar por defecto
+  ---
+  duration_ms: 5.0059
+  type: 'test'
+  ...
+# Subtest: Comprobación rechaza faltantes, otro destino, TLS incorrecto o recuperación habilitada
+ok 2 - Comprobación rechaza faltantes, otro destino, TLS incorrecto o recuperación habilitada
+  ---
+  duration_ms: 3.0529
+  type: 'test'
+  ...
+# Subtest: Verificación autorizada llama solo verify y close con TLS y tiempos existentes
+ok 3 - Verificación autorizada llama solo verify y close con TLS y tiempos existentes
+  ---
+  duration_ms: 0.9055
+  type: 'test'
+  ...
+# Subtest: Errores de autenticación/red/TLS se sanitizan, cierran transporte y no registran secretos
+ok 4 - Errores de autenticación/red/TLS se sanitizan, cierran transporte y no registran secretos
+  ---
+  duration_ms: 6.0575
+  type: 'test'
+  ...
+# Subtest: verify falso se rechaza y fallo al cerrar no expone el error original
+ok 5 - verify falso se rechaza y fallo al cerrar no expone el error original
+  ---
+  duration_ms: 1.0385
+  type: 'test'
+  ...
+# Subtest: Diagnóstico conserva solo campos permitidos y elimina argumentos AUTH y respuesta
+ok 6 - Diagnóstico conserva solo campos permitidos y elimina argumentos AUTH y respuesta
+  ---
+  duration_ms: 1.1547
+  type: 'test'
+  ...
+# Subtest: Diagnóstico distingue certificados TLS y descarta campos arbitrarios
+ok 7 - Diagnóstico distingue certificados TLS y descarta campos arbitrarios
+  ---
+  duration_ms: 11.6777
+  type: 'test'
+  ...
+# No se pudo programar el aviso de inclinación.
+# Subtest: critical requires ready state, threshold and full persistence
+ok 8 - critical requires ready state, threshold and full persistence
+  ---
+  duration_ms: 4.4322
+  type: 'test'
+  ...
+# Subtest: active users, unique individual recipients, failure continues and persisted latch rearms only at normal
+ok 9 - active users, unique individual recipients, failure continues and persisted latch rearms only at normal
+  ---
+  duration_ms: 91.2029
+  type: 'test'
+  ...
+# Subtest: mail template reports RAW and real vibration without inventing global danger
+ok 10 - mail template reports RAW and real vibration without inventing global danger
+  ---
+  duration_ms: 1.7691
+  type: 'test'
+  ...
+# Subtest: disabled by default, invalid switch rejected
+ok 11 - disabled by default, invalid switch rejected
+  ---
+  duration_ms: 0.9594
+  type: 'test'
+  ...
+# Subtest: notification failure cannot reject committed measurement
+ok 12 - notification failure cannot reject committed measurement
+  ---
+  duration_ms: 2.9114
+  type: 'test'
+  ...
+# Subtest: pending mail does not block receiving controller
+ok 13 - pending mail does not block receiving controller
+  ---
+  duration_ms: 2.8114
+  type: 'test'
+  ...
+# Subtest: Configuración SMTP obliga STARTTLS o TLS y certificados válidos
+ok 14 - Configuración SMTP obliga STARTTLS o TLS y certificados válidos
+  ---
+  duration_ms: 8.5744
+  type: 'test'
+  ...
+# Subtest: Configuración incompleta o insegura falla sin exponer valores
+ok 15 - Configuración incompleta o insegura falla sin exponer valores
+  ---
+  duration_ms: 2.2743
+  type: 'test'
+  ...
+# Subtest: Plantillas HTML/texto estructuradas, contenido escapado y enlace seguro
+ok 16 - Plantillas HTML/texto estructuradas, contenido escapado y enlace seguro
+  ---
+  duration_ms: 1.8926
+  type: 'test'
+  ...
+# Subtest: Servicio inyectable permite plantillas y futuras notificaciones sin campos adicionales
+ok 17 - Servicio inyectable permite plantillas y futuras notificaciones sin campos adicionales
+  ---
+  duration_ms: 2.7373
+  type: 'test'
+  ...
+# Subtest: Falla SMTP y rechazo de destinatario producen error sanitizado sin logs
+ok 18 - Falla SMTP y rechazo de destinatario producen error sanitizado sin logs
+  ---
+  duration_ms: 15.3337
+  type: 'test'
+  ...
+# Subtest: Adaptador SMTP CommonJS se construye sin verificar conexión ni enviar
+ok 19 - Adaptador SMTP CommonJS se construye sin verificar conexión ni enviar
+  ---
+  duration_ms: 1.0409
+  type: 'test'
+  ...
+# Subtest: Nodemailer genera MIME multipart con transporte stream en memoria sin red
+ok 20 - Nodemailer genera MIME multipart con transporte stream en memoria sin red
+  ---
+  duration_ms: 46.4436
+  type: 'test'
+  ...
+# Subtest: Recuperación genera 32 bytes aleatorios y entrega solo SHA-256 a persistencia
+ok 21 - Recuperación genera 32 bytes aleatorios y entrega solo SHA-256 a persistencia
+  ---
+  duration_ms: 8.6396
+  type: 'test'
+  ...
+# Subtest: Consumo conserva scrypt y política, valida formato antes de persistir
+ok 22 - Consumo conserva scrypt y política, valida formato antes de persistir
+  ---
+  duration_ms: 1333.5242
+  type: 'test'
+  ...
+# Subtest: Errores SQL hacen rollback y liberan conexión; rollback fallido descarta cliente
+ok 23 - Errores SQL hacen rollback y liberan conexión; rollback fallido descarta cliente
+  ---
+  duration_ms: 3.8411
+  type: 'test'
+  ...
+# Subtest: Fallo de COMMIT intenta rollback y no declara éxito
+ok 24 - Fallo de COMMIT intenta rollback y no declara éxito
+  ---
+  duration_ms: 1.0781
+  type: 'test'
+  ...
+# Subtest: Reset local de contraseña
+    # Subtest: usuario existente, email normalizado y otros campos intactos
+    ok 1 - usuario existente, email normalizado y otros campos intactos
+      ---
+      duration_ms: 658.9239
+      type: 'test'
+      ...
+    # Subtest: usuario inexistente no modifica ningún hash
+    ok 2 - usuario inexistente no modifica ningún hash
+      ---
+      duration_ms: 538.264
+      type: 'test'
+      ...
+    # Subtest: contraseña inválida se rechaza antes de consultar la base
+    ok 3 - contraseña inválida se rechaza antes de consultar la base
+      ---
+      duration_ms: 1.1034
+      type: 'test'
+      ...
+    # Subtest: hash actualizado con sal nueva y sin contraseña literal
+    ok 4 - hash actualizado con sal nueva y sin contraseña literal
+      ---
+      duration_ms: 0.3477
+      type: 'test'
+      ...
+    # Subtest: contraseña antigua deja de validar
+    ok 5 - contraseña antigua deja de validar
+      ---
+      duration_ms: 910.1702
+      type: 'test'
+      ...
+    # Subtest: nueva contraseña valida
+    ok 6 - nueva contraseña valida
+      ---
+      duration_ms: 446.419
+      type: 'test'
+      ...
+    1..6
+ok 25 - Reset local de contraseña
+  ---
+  duration_ms: 3223.1257
+  type: 'test'
+  ...
+# Subtest: Persistencia users: SELECT/INSERT parametrizados y salida pública
+ok 26 - Persistencia users: SELECT/INSERT parametrizados y salida pública
+  ---
+  duration_ms: 10.1151
+  type: 'test'
+  ...
+# Subtest: PATCH serializa cambios y preserva último administrador
+ok 27 - PATCH serializa cambios y preserva último administrador
+  ---
+  duration_ms: 2.6282
+  type: 'test'
+  ...
+# Subtest: Bootstrap admin: inserción segura, existente y rollback
+ok 28 - Bootstrap admin: inserción segura, existente y rollback
+  ---
+  duration_ms: 1893.5496
+  type: 'test'
+  ...
+# Subtest: DELETE usa bloqueo compartido con PATCH, filtra eliminados y revierte errores
+ok 29 - DELETE usa bloqueo compartido con PATCH, filtra eliminados y revierte errores
+  ---
+  duration_ms: 2.3511
+  type: 'test'
+  ...
+1..29
+# tests 35
+# suites 0
+# pass 35
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3877.9624
+Codigo de salida: 0

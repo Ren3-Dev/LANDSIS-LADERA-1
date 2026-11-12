@@ -1,0 +1,363 @@
+Fecha Guatemala: 2026-11-09T04:25:49.1646066-06:00
+Directorio: C:\Users\Augus\Documents\LANDSIS-LADERA-1\frontend
+Comando: node '--import' '../backend/node_modules/tsx/dist/loader.mjs' '--test' '--test-reporter=tap' 'tests/*.test.tsx'
+
+TAP version 13
+# Subtest: Login muestra campos accesibles y contraseña oculta
+ok 1 - Login muestra campos accesibles y contraseña oculta
+  ---
+  duration_ms: 24.9139
+  type: 'test'
+  ...
+# Subtest: Dashboard no se renderiza mientras se verifica sesión
+ok 2 - Dashboard no se renderiza mientras se verifica sesión
+  ---
+  duration_ms: 2.538
+  type: 'test'
+  ...
+# Subtest: Navegación diferencia los tres roles
+ok 3 - Navegación diferencia los tres roles
+  ---
+  duration_ms: 12.593
+  type: 'test'
+  ...
+# Subtest: Cliente login, restauración me y logout usa cookie y cabecera CSRF
+ok 4 - Cliente login, restauración me y logout usa cookie y cabecera CSRF
+  ---
+  duration_ms: 64.2326
+  type: 'test'
+  ...
+# Subtest: Credenciales inválidas producen error claro
+ok 5 - Credenciales inválidas producen error claro
+  ---
+  duration_ms: 4.3253
+  type: 'test'
+  ...
+# Subtest: Una sesión vencida en telemetría notifica al contenedor
+ok 6 - Una sesión vencida en telemetría notifica al contenedor
+  ---
+  duration_ms: 1.392
+  type: 'test'
+  ...
+# Subtest: Eliminar usuario envía DELETE protegido y admite 204 sin JSON
+ok 7 - Eliminar usuario envía DELETE protegido y admite 204 sin JSON
+  ---
+  duration_ms: 1.6175
+  type: 'test'
+  ...
+# Subtest: Acciones de usuarios ocultan Eliminar para ADMINISTRADOR y conservan Editar
+ok 8 - Acciones de usuarios ocultan Eliminar para ADMINISTRADOR y conservan Editar
+  ---
+  duration_ms: 12.1169
+  type: 'test'
+  ...
+# Subtest: Mediciones diarias se muestran primero sin reemplazar el historial detallado
+ok 9 - Mediciones diarias se muestran primero sin reemplazar el historial detallado
+  ---
+  duration_ms: 34.8372
+  type: 'test'
+  ...
+# Subtest: Día y hora se muestran en Guatemala incluso al cruzar medianoche UTC
+ok 10 - Día y hora se muestran en Guatemala incluso al cruzar medianoche UTC
+  ---
+  duration_ms: 2.2594
+  type: 'test'
+  ...
+# Subtest: Cliente diario consulta endpoint propio con filtros y valida las filas
+ok 11 - Cliente diario consulta endpoint propio con filtros y valida las filas
+  ---
+  duration_ms: 75.3389
+  type: 'test'
+  ...
+# Subtest: Referencias seco/agua, interpolación y ausencia de datos
+ok 12 - Referencias seco/agua, interpolación y ausencia de datos
+  ---
+  duration_ms: 2.2369
+  type: 'test'
+  ...
+# Subtest: ALERTA o CRITICO 6/6 y sesenta segundos confirmados, nunca antes
+ok 13 - ALERTA o CRITICO 6/6 y sesenta segundos confirmados, nunca antes
+  ---
+  duration_ms: 3.8383
+  type: 'test'
+  ...
+# Subtest: condiciones normales, precaucion, contador incompleto o fecha futura no activan
+ok 14 - condiciones normales, precaucion, contador incompleto o fecha futura no activan
+  ---
+  duration_ms: 0.6352
+  type: 'test'
+  ...
+# Subtest: sin consulta reciente no se confunde actualización manual con desconexión
+ok 15 - sin consulta reciente no se confunde actualización manual con desconexión
+  ---
+  duration_ms: 0.3795
+  type: 'test'
+  ...
+# Subtest: normal nuevo desarma antes de desconexión
+ok 16 - normal nuevo desarma antes de desconexión
+  ---
+  duration_ms: 0.3345
+  type: 'test'
+  ...
+# Subtest: recuperación conserva aviso durante una hora desde activación y luego lo retira
+ok 17 - recuperación conserva aviso durante una hora desde activación y luego lo retira
+  ---
+  duration_ms: 0.4165
+  type: 'test'
+  ...
+# Subtest: sin recuperación dura más de una hora y almacenamiento preserva estado
+ok 18 - sin recuperación dura más de una hora y almacenamiento preserva estado
+  ---
+  duration_ms: 2.0974
+  type: 'test'
+  ...
+# Subtest: Referencia usa deltas reales con su signo, dos ejes y baseline visual fijo
+ok 19 - Referencia usa deltas reales con su signo, dos ejes y baseline visual fijo
+  ---
+  duration_ms: 34.7857
+  type: 'test'
+  ...
+# Subtest: Sin datos recientes o válidos solo muestra referencia neutral, sin ángulos inventados
+ok 20 - Sin datos recientes o válidos solo muestra referencia neutral, sin ángulos inventados
+  ---
+  duration_ms: 20.6576
+  type: 'test'
+  ...
+# Subtest: Orientación muestra grados cero y distingue arranque/ausencia sin ceros ficticios
+ok 21 - Orientación muestra grados cero y distingue arranque/ausencia sin ceros ficticios
+  ---
+  duration_ms: 34.3651
+  type: 'test'
+  ...
+# Subtest: CRITICO de inclinación no activa el semáforo global
+ok 22 - CRITICO de inclinación no activa el semáforo global
+  ---
+  duration_ms: 13.0623
+  type: 'test'
+  ...
+# Subtest: Tarjeta de inclinación muestra deltas y la temperatura solo queda en el detalle inferior
+ok 23 - Tarjeta de inclinación muestra deltas y la temperatura solo queda en el detalle inferior
+  ---
+  duration_ms: 20.7425
+  type: 'test'
+  ...
+# Subtest: Latest acepta orientación validada y legacy; rechaza bloques parciales y no finitos
+ok 24 - Latest acepta orientación validada y legacy; rechaza bloques parciales y no finitos
+  ---
+  duration_ms: 64.1399
+  type: 'test'
+  ...
+# Subtest: Recepción vence exactamente a los 60 segundos y fechas ausentes/futuras no son recientes
+ok 25 - Recepción vence exactamente a los 60 segundos y fechas ausentes/futuras no son recientes
+  ---
+  duration_ms: 2.4439
+  type: 'test'
+  ...
+# Subtest: Lectura antigua deja los cuatro niveles grises y una nueva recepción los recupera
+ok 26 - Lectura antigua deja los cuatro niveles grises y una nueva recepción los recupera
+  ---
+  duration_ms: 76.0839
+  type: 'test'
+  ...
+# Subtest: La referencia de latest activa el semáforo con el reloj local atrasado y conserva el vencimiento
+ok 27 - La referencia de latest activa el semáforo con el reloj local atrasado y conserva el vencimiento
+  ---
+  duration_ms: 68.9497
+  type: 'test'
+  ...
+# Subtest: Polling evita solicitudes solapadas, actualiza cada 10 s e ignora respuestas tras cerrar
+ok 28 - Polling evita solicitudes solapadas, actualiza cada 10 s e ignora respuestas tras cerrar
+  ---
+  duration_ms: 6.0194
+  type: 'test'
+  ...
+# Subtest: Timeout de consulta notifica error y el polling puede recuperarse
+ok 29 - Timeout de consulta notifica error y el polling puede recuperarse
+  ---
+  duration_ms: 22.3693
+  type: 'test'
+  ...
+# Subtest: Intervalos de minutos respetan el menú y modo manual conserva la consulta inmediata
+ok 30 - Intervalos de minutos respetan el menú y modo manual conserva la consulta inmediata
+  ---
+  duration_ms: 48.5103
+  type: 'test'
+  ...
+# Subtest: Login enlaza recuperación sin cambiar formulario ni roles
+ok 31 - Login enlaza recuperación sin cambiar formulario ni roles
+  ---
+  duration_ms: 18.8589
+  type: 'test'
+  ...
+# Subtest: Ruta pública de solicitud funciona sin restaurar sesión
+ok 32 - Ruta pública de solicitud funciona sin restaurar sesión
+  ---
+  duration_ms: 5.2147
+  type: 'test'
+  ...
+# Subtest: Token válido se recibe desde fragmento y se retira toda query/hash sin copiarlo al historial
+ok 33 - Token válido se recibe desde fragmento y se retira toda query/hash sin copiarlo al historial
+  ---
+  duration_ms: 1.5108
+  type: 'test'
+  ...
+# Subtest: Token ausente, inválido, duplicado o por query no se admite y también limpia URL
+ok 34 - Token ausente, inválido, duplicado o por query no se admite y también limpia URL
+  ---
+  duration_ms: 1.1307
+  type: 'test'
+  ...
+# Subtest: popstate y hashchange de la misma navegación capturan el token una sola vez
+ok 35 - popstate y hashchange de la misma navegación capturan el token una sola vez
+  ---
+  duration_ms: 1.1414
+  type: 'test'
+  ...
+# Subtest: Formulario de nueva contraseña no expone token ni agrega recursos externos
+ok 36 - Formulario de nueva contraseña no expone token ni agrega recursos externos
+  ---
+  duration_ms: 2.9331
+  type: 'test'
+  ...
+# Subtest: Enlace inválido no presenta formulario y permite solicitar otro o volver al login
+ok 37 - Enlace inválido no presenta formulario y permite solicitar otro o volver al login
+  ---
+  duration_ms: 1.5341
+  type: 'test'
+  ...
+# Subtest: Correo usa validación y normalización compatibles con backend
+ok 38 - Correo usa validación y normalización compatibles con backend
+  ---
+  duration_ms: 0.6912
+  type: 'test'
+  ...
+# Subtest: Política Unicode coincide con backend y no recorta ni normaliza contraseña
+ok 39 - Política Unicode coincide con backend y no recorta ni normaliza contraseña
+  ---
+  duration_ms: 0.6724
+  type: 'test'
+  ...
+# Subtest: Solicita recuperación con JSON/cabecera/cookie y muestra mensaje genérico uniforme
+ok 40 - Solicita recuperación con JSON/cabecera/cookie y muestra mensaje genérico uniforme
+  ---
+  duration_ms: 44.8717
+  type: 'test'
+  ...
+# Subtest: Validaciones rechazan correo, token, política y confirmación antes de enviar
+ok 41 - Validaciones rechazan correo, token, política y confirmación antes de enviar
+  ---
+  duration_ms: 1.7656
+  type: 'test'
+  ...
+# Subtest: Reset manda solo token/password, sin login automático ni normalizar contraseña
+ok 42 - Reset manda solo token/password, sin login automático ni normalizar contraseña
+  ---
+  duration_ms: 1.5815
+  type: 'test'
+  ...
+# Subtest: Token vencido/inválido y límites conservan errores públicos sin evento de sesión vencida
+ok 43 - Token vencido/inválido y límites conservan errores públicos sin evento de sesión vencida
+  ---
+  duration_ms: 4.0298
+  type: 'test'
+  ...
+# Subtest: Confirmación ofrece volver a login y no afirma una sesión automática
+ok 44 - Confirmación ofrece volver a login y no afirma una sesión automática
+  ---
+  duration_ms: 3.3618
+  type: 'test'
+  ...
+# Subtest: Referrer-Policy está presente antes de recursos y no hay persistencia de tokens
+ok 45 - Referrer-Policy está presente antes de recursos y no hay persistencia de tokens
+  ---
+  duration_ms: 2.9121
+  type: 'test'
+  ...
+# Subtest: Semáforo activa un único nivel recibido y mantiene el riesgo global sin evaluar
+ok 46 - Semáforo activa un único nivel recibido y mantiene el riesgo global sin evaluar
+  ---
+  duration_ms: 73.0742
+  type: 'test'
+  ...
+# Subtest: Un delta aislado alto no reemplaza la persistencia del firmware
+ok 47 - Un delta aislado alto no reemplaza la persistencia del firmware
+  ---
+  duration_ms: 15.3244
+  type: 'test'
+  ...
+# Subtest: Sin orientación, calibrando, inválida o sin fecha no se da verde por defecto
+ok 48 - Sin orientación, calibrando, inválida o sin fecha no se da verde por defecto
+  ---
+  duration_ms: 9.8759
+  type: 'test'
+  ...
+# Subtest: Dashboard, historial y estado se enfocan en LADERA-1 sin selector ni catálogo de nodos
+ok 49 - Dashboard, historial y estado se enfocan en LADERA-1 sin selector ni catálogo de nodos
+  ---
+  duration_ms: 29.5044
+  type: 'test'
+  ...
+# Subtest: Dashboard muestra humedad relativa, RAW y vibración
+ok 50 - Dashboard muestra humedad relativa, RAW y vibración
+  ---
+  duration_ms: 26.1635
+  type: 'test'
+  ...
+# Subtest: Estado del nodo distingue bloque MPU completo y null sin diagnosticar fallos ADC
+ok 51 - Estado del nodo distingue bloque MPU completo y null sin diagnosticar fallos ADC
+  ---
+  duration_ms: 5.7683
+  type: 'test'
+  ...
+# Subtest: Vistas manejan nodo sin mediciones e historial vacío
+ok 52 - Vistas manejan nodo sin mediciones e historial vacío
+  ---
+  duration_ms: 8.1029
+  type: 'test'
+  ...
+# Subtest: Historial muestra tabla simplificada, gráfico y detalles MPU
+ok 53 - Historial muestra tabla simplificada, gráfico y detalles MPU
+  ---
+  duration_ms: 9.4253
+  type: 'test'
+  ...
+# Subtest: API historial envía filtros existentes, latest sin mediciones y rechaza MPU parcial
+ok 54 - API historial envía filtros existentes, latest sin mediciones y rechaza MPU parcial
+  ---
+  duration_ms: 40.8474
+  type: 'test'
+  ...
+# Subtest: Cada vista tiene un único destino activo en la navegación
+ok 55 - Cada vista tiene un único destino activo en la navegación
+  ---
+  duration_ms: 12.2708
+  type: 'test'
+  ...
+# Subtest: Dashboard prioriza semáforo y tarjetas, oculta telemetría cruda y reubica temperatura
+ok 56 - Dashboard prioriza semáforo y tarjetas, oculta telemetría cruda y reubica temperatura
+  ---
+  duration_ms: 13.9903
+  type: 'test'
+  ...
+# Subtest: Semáforo propone cuatro niveles inactivos incluso con vibración y extremos RAW
+ok 57 - Semáforo propone cuatro niveles inactivos incluso con vibración y extremos RAW
+  ---
+  duration_ms: 6.7025
+  type: 'test'
+  ...
+# Subtest: Temperatura ausente y lecturas antiguas conservan ausencia sin simular conexión
+ok 58 - Temperatura ausente y lecturas antiguas conservan ausencia sin simular conexión
+  ---
+  duration_ms: 14.2208
+  type: 'test'
+  ...
+1..58
+# tests 58
+# suites 0
+# pass 58
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3257.3106
+Codigo de salida: 0
